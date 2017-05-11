@@ -5,51 +5,30 @@ using UnityEngine;
 public class MaterialEditor : MonoBehaviour
 {
     public GameObject item;
-    //public Texture2D Texture;
     public int itemResolution = 512;
     public int textureResolution = 1024;
     private Texture2D Texture2;
-    private int now = 0;
-    private static int max = 100;
     private RingGenerator generator;
-
-    // Update is called once per frame
-    void Update2()
-    {
-        //getUV();
-        Texture2 = new Texture2D(max, max, TextureFormat.ARGB32, false);
-        Texture2.SetPixel(now, now, Color.red);
-        Texture2.Apply();
-
-        // if (now>50)
-        //     GetComponent<Renderer>().material.mainTexture = Texture;
-        // else
-        GetComponent<Renderer>().material.mainTexture = Texture2;
-
-        now++;
-        if (now > max) now = 0;
-    }
-
+    
     void Start()
     {
         generator = new RingGenerator(item, itemResolution);
         generator.getHeightMap();
-        Texture2D textureRing = generator.getNormalMap(30);
+        Texture2D stamp = generator.getNormalMap(30);
+        //Texture2D stamp = generator.getHeightMap();
 
 
         //colorizeTriangles();
         //colorizeTrianglgenerateRing();
-        //gameObject.AddComponent<MeshCollider>();
 
         // create material for GL rendering //
-        material = new Material(Shader.Find("GUI/Text Shader"));
+        Material material = new Material(Shader.Find("FlatShader"));
         material.hideFlags = HideFlags.HideAndDontSave;
         material.shader.hideFlags = HideFlags.HideAndDontSave;
-        material.mainTexture = textureRing;
+        material.SetPass(0);
+        ///material.mainTexture = stamp;
 
-
-
-        texture = RenderGLToTexture(textureResolution, textureResolution, material, textureRing);
+        Texture2D texture = RenderGLToTexture(textureResolution, textureResolution, stamp);
         texture.Apply(true);
         System.IO.File.WriteAllBytes("Assets/DupaMap.png", texture.EncodeToPNG());
 
@@ -60,7 +39,7 @@ public class MaterialEditor : MonoBehaviour
 
     void colorizeTriangles()
     {
-        Texture2 = new Texture2D(max, max, TextureFormat.ARGB32, false);
+        Texture2 = new Texture2D(itemResolution, itemResolution, TextureFormat.ARGB32, false);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         TriUv[] tris = new TriUv[mesh.triangles.Length / 3];
@@ -265,10 +244,8 @@ public class MaterialEditor : MonoBehaviour
     }
 
 
-    Texture2D texture;
-    Material material;
 
-    static Texture2D RenderGLToTexture(int width, int height, Material material, Texture2D source)
+    static Texture2D RenderGLToTexture(int width, int height, Texture2D source)
     {
         // get a temporary RenderTexture //
         RenderTexture renderTexture = RenderTexture.GetTemporary(width, height);
@@ -280,7 +257,7 @@ public class MaterialEditor : MonoBehaviour
         GL.Clear(false, true, Color.black);
 
         // render GL immediately to the active render texture //
-        RenderGLStuff(width, height, material, source);
+        RenderGLStuff(width, height, source);
 
         // read the active RenderTexture into a new Texture2D //
         Texture2D newTexture = new Texture2D(width, height);
@@ -294,15 +271,12 @@ public class MaterialEditor : MonoBehaviour
         return newTexture;
     }
 
-
-
-    static void RenderGLStuff(int width, int height, Material material, Texture2D source)
+    static void RenderGLStuff(int width, int height, Texture2D source)
     {
-        material.SetPass(0);
         GL.PushMatrix();
         GL.LoadPixelMatrix(0, width, height, 0);
 
-        Graphics.DrawTexture(new Rect(0, 0, 0, 0), source);
+        Graphics.DrawTexture(new Rect(0, 0, width, height), source);
 
         GL.LoadOrtho();
         GL.Begin(GL.TRIANGLES);

@@ -32,6 +32,11 @@ public class MaterialEditor : MonoBehaviour
 
     void Start()
     {
+        generator = new RingGenerator(item, itemResolution);
+        generator.getHeightMap();
+        Texture2D textureRing = generator.getNormalMap(30);
+
+
         //colorizeTriangles();
         //colorizeTrianglgenerateRing();
         //gameObject.AddComponent<MeshCollider>();
@@ -40,15 +45,18 @@ public class MaterialEditor : MonoBehaviour
         material = new Material(Shader.Find("GUI/Text Shader"));
         material.hideFlags = HideFlags.HideAndDontSave;
         material.shader.hideFlags = HideFlags.HideAndDontSave;
+        material.mainTexture = textureRing;
 
 
 
-        texture = RenderGLToTexture(textureResolution, textureResolution, material);
+        texture = RenderGLToTexture(textureResolution, textureResolution, material, textureRing);
         texture.Apply(true);
         System.IO.File.WriteAllBytes("Assets/DupaMap.png", texture.EncodeToPNG());
 
         GetComponent<Renderer>().material.mainTexture = texture;
     }
+
+
 
     void colorizeTriangles()
     {
@@ -260,23 +268,7 @@ public class MaterialEditor : MonoBehaviour
     Texture2D texture;
     Material material;
 
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Destroy(texture);
-            texture = RenderGLToTexture(textureResolution, textureResolution, material);
-            
-            texture.Apply(true);
-            System.IO.File.WriteAllBytes("Assets/Dupa2Map.png", texture.EncodeToPNG());
-
-            GetComponent<Renderer>().material.mainTexture = texture;
-        }
-    }
-
-
-    static Texture2D RenderGLToTexture(int width, int height, Material material)
+    static Texture2D RenderGLToTexture(int width, int height, Material material, Texture2D source)
     {
         // get a temporary RenderTexture //
         RenderTexture renderTexture = RenderTexture.GetTemporary(width, height);
@@ -288,17 +280,11 @@ public class MaterialEditor : MonoBehaviour
         GL.Clear(false, true, Color.black);
 
         // render GL immediately to the active render texture //
-        RenderGLStuff(width, height, material);
+        RenderGLStuff(width, height, material, source);
 
         // read the active RenderTexture into a new Texture2D //
         Texture2D newTexture = new Texture2D(width, height);
         newTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-
-        // apply pixels and compress //
-        //bool applyMipsmaps = false;
-        newTexture.Apply(true);
-        //bool highQuality = true;
-        //newTexture.Compress(highQuality);
 
         // clean up after the party //
         RenderTexture.active = null;
@@ -308,21 +294,22 @@ public class MaterialEditor : MonoBehaviour
         return newTexture;
     }
 
-    static void RenderGLStuff(int width, int height, Material material)
+
+
+    static void RenderGLStuff(int width, int height, Material material, Texture2D source)
     {
         material.SetPass(0);
         GL.PushMatrix();
         GL.LoadPixelMatrix(0, width, height, 0);
-        GL.Begin(GL.LINES);
-        GL.Color(new Color(1, 0, 0, 0.5f));
-        for (int i = 0; i < 500; i++) GL.Vertex3(Random.value * width, Random.value * height, 0);
+
+        Graphics.DrawTexture(new Rect(0, 0, 0, 0), source);
+
+        GL.LoadOrtho();
+        GL.Begin(GL.TRIANGLES);
+        GL.TexCoord2(1, 0); GL.Vertex3(0.5f, 0, 0);
+        GL.TexCoord2(1, 1); GL.Vertex3(1, 1, 0);
+        GL.TexCoord2(0, 1); GL.Vertex3(0, 1, 0);
         GL.End();
         GL.PopMatrix();
-    }
-    void OnGUI()
-    {
-        GUILayout.Label("Press <SPACE> to render GL commands to a Texture2D");
-        //if (texture == null) return;
-       // GUI.DrawTexture(new Rect(Screen.width * 0.5f - texture.width * 0.5f, Screen.height * 0.5f - texture.height * 0.5f, texture.width, texture.height), texture);
     }
 }

@@ -81,8 +81,6 @@ public class MaterialEditor : MonoBehaviour
 	{
 		GL.PushMatrix ();
 
-		//Triangle2D positionInOutputNormalized
-		//GL.LoadPixelMatrix (0, textureResolution, textureResolution, 0);
 		GL.LoadPixelMatrix (0, 1, 1, 0);
 		Graphics.DrawMeshNow (CreateMesh (positionInOutput, positionInInput), Vector3.zero, Quaternion.identity);
 

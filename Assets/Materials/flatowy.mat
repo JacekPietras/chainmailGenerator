@@ -7,10 +7,11 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: flatowy
-  m_Shader: {fileID: 4800000, guid: ee31efa24965a8a4499b37d89c9d2d31, type: 3}
+  m_Shader: {fileID: 4800000, guid: 087f91c424860f449bcd043a63d39856, type: 3}
   m_ShaderKeywords: _GLOSSYREFLECTIONS_OFF _NORMALMAP _SPECULARHIGHLIGHTS_OFF
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []

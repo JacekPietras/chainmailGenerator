@@ -14,7 +14,7 @@ public class RandomizeVerts : MonoBehaviour
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         orginalVertices = (Vector3[])mesh.vertices.Clone();
         sinFactors = new Vector3[orginalVertices.Length];
-
+     
         int i = 0;
         while (i < orginalVertices.Length)
         {
@@ -41,7 +41,7 @@ public class RandomizeVerts : MonoBehaviour
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         Vector3[] vertices = mesh.vertices;
         float mult = Mathf.Sin(Time.realtimeSinceStartup);
-        Debug.Log(mult+" "+ Time.realtimeSinceStartup);
+        //Debug.Log(mult+" "+ Time.realtimeSinceStartup);
 
         int i = 0;
         while (i < vertices.Length)

@@ -124,6 +124,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skewFactor: 0.05
+--- !u!114 &915320575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 915320569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d7681333290a7148937f8f9cc581a0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
+  itemResolution: 512
+  textureResolution: 1024
+  objectMap: {fileID: 2800000, guid: 7ff209e9dfa59574190ad23316031eb4, type: 3}
 --- !u!1 &1020227418
 GameObject:
   m_ObjectHideFlags: 0
@@ -215,7 +230,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1020227418}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d7681333290a7148937f8f9cc581a0d, type: 3}
   m_Name: 
@@ -223,6 +238,7 @@ MonoBehaviour:
   item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
   itemResolution: 512
   textureResolution: 1024
+  objectMap: {fileID: 0}
 --- !u!1001 &1287160169
 Prefab:
   m_ObjectHideFlags: 0
@@ -279,7 +295,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1615261210}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d7681333290a7148937f8f9cc581a0d, type: 3}
   m_Name: 
@@ -287,6 +303,7 @@ MonoBehaviour:
   item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
   itemResolution: 512
   textureResolution: 1024
+  objectMap: {fileID: 0}
 --- !u!1001 &1735276591
 Prefab:
   m_ObjectHideFlags: 0

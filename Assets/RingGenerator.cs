@@ -118,10 +118,6 @@ public class RingGenerator
 	// strength in argument is for how raised output texture should be
 	public Texture2D getNormalMap (float strength = 30)
 	{
-		// If heightMap wasn't generated, we should generate it now
-		if (textureHeight == null)
-			getHeightMap ();
-
 		// if texture was already generated there is no need
 		// to generate it again
 		// also strength must be the same
@@ -130,7 +126,11 @@ public class RingGenerator
 		else
 			strengthOfGeneratedNormalMap = strength;
 
-		normalTexture = new Texture2D (textureHeight.width, textureHeight.height, TextureFormat.RGB24, textureHeight.mipmapCount > 1);
+        // If heightMap wasn't generated, we should generate it now
+        if (textureHeight == null)
+            getHeightMap();
+
+        normalTexture = new Texture2D (textureHeight.width, textureHeight.height, TextureFormat.RGB24, textureHeight.mipmapCount > 1);
 		Color[] nPixels = new Color[heights.Length];
 
 		for (int y = 0; y < textureHeight.height; y++) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,82 +18,63 @@ public class MaterialEditor : MonoBehaviour
     private RingGenerator generator;
     private PlanarMesh planarMesh;
 
+    private Texture2D heightMap;
+    private Texture2D normalMap;
+    private Texture2D distortedHeightMap;
+    private Texture2D distortedNormalMap;
+
+    private Material material;
+    private Mesh mesh3d;
+
     void Start()
     {
+        material = GetComponent<Renderer>().material;
+        mesh3d = GetComponent<MeshFilter>().mesh;
+
         // generates raytraced maps from 3D object
         generator = new RingGenerator(item, itemResolution);
 
-        // raytracing textures from 3D object
-        Texture2D heightMap = generator.getHeightMap();
-        Texture2D normalMap = generator.getNormalMap(30);
+        // raytracing stamp textures from 3D object
+        heightMap = generator.getHeightMap();
+        normalMap = generator.getNormalMap(30);
 
-        // generating distorted texture
-        Texture2D distortedMap = paintAllTriangles(normalMap);
+        // creation of resusable textures that will be used on model
+        distortedHeightMap = new Texture2D(textureResolution, textureResolution);
+        distortedNormalMap = new Texture2D(textureResolution, textureResolution);
 
+        setTextures();
+        //material.SetTexture("_MainTex", distortedNormalMap);
+
+        planarMesh = new PlanarMesh(mesh3d, objectMap);
+    }
+
+    private void OnDestroy()
+    {
         // map is also saved in asset files so we can use it in other places
-        System.IO.File.WriteAllBytes("Assets/Maps/DistortedMap.png", distortedMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes("Assets/Maps/DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes("Assets/Maps/DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
         System.IO.File.WriteAllBytes("Assets/Maps/NormalMap.png", normalMap.EncodeToPNG());
         System.IO.File.WriteAllBytes("Assets/Maps/HeightMap.png", heightMap.EncodeToPNG());
-
-        // Setting generated texture to object
-        GetComponent<Renderer>().material.mainTexture = distortedMap;
     }
 
     void Update()
     {
-        Texture2D distortedMap = paintAllTriangles(generator.getNormalMap(30));
-        GetComponent<Renderer>().material.mainTexture = distortedMap;
+        updateDistortedMap();
+        Debug.Log("update of planar mesh");
     }
 
-    Texture2D paintAllTriangles(Texture2D source)
+    private void updateDistortedMap()
     {
-        Mesh mesh3d = GetComponent<MeshFilter>().mesh;
-
-        return RenderToTexture(mesh3d, source);
-    }
-
-    private Texture2D RenderToTexture(Mesh mesh3d, Texture2D source)
-    {
-        // create material for distortedMap rendering
-        Material material = new Material(Shader.Find("Sprites/Default"));
-        material.mainTexture = source;
-        material.SetPass(0);
-
-        // get a temporary RenderTexture. It will be canvas for rendering on it, but not output 
-        RenderTexture renderTexture = RenderTexture.GetTemporary(textureResolution, textureResolution);
-        renderTexture.wrapMode = TextureWrapMode.Clamp;
-
-        // set the RenderTexture as global target (that means GL too)
-        RenderTexture.active = renderTexture;
-
-        // render GL immediately to the active render texture
-        renderTriangle(mesh3d);
-
-        // read the active RenderTexture into a new Texture2D
-        Texture2D newTexture = new Texture2D(textureResolution, textureResolution);
-        newTexture.wrapMode = TextureWrapMode.Clamp;
-        newTexture.ReadPixels(new Rect(0, 0, textureResolution, textureResolution), 0, 0);
-
-        // clean up after the party
-        RenderTexture.active = null;
-        RenderTexture.ReleaseTemporary(renderTexture);
-
-        // return the goods
-        newTexture.Apply();
-        return newTexture;
-    }
-
-    private void renderTriangle(Mesh mesh3d)
-    {
-        if (planarMesh == null)
-        {
-            planarMesh = new PlanarMesh(mesh3d, objectMap);
-        }
         planarMesh.updateMesh(mesh3d);
+        planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0, 2);
+        planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1, 2);
+    }
 
-        GL.PushMatrix();
-        GL.LoadPixelMatrix(0, 1, 1, 0);
-        Graphics.DrawMeshNow(planarMesh.getMesh(), Vector3.zero, Quaternion.identity);
-        GL.PopMatrix();
+    private void setTextures()
+    {
+        material.EnableKeyword("_NORMALMAP");
+        material.EnableKeyword("_METALLICGLOSSMAP");
+        material.SetTexture("_BumpMap", distortedNormalMap);
+        material.SetTexture("_MainTex", distortedHeightMap);
     }
 }

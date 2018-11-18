@@ -7,39 +7,57 @@ using UnityEngine;
 public class PlanarMesh
 {
     private Mesh mesh;
-    private List<TextureObject>[] textureObjectsOnTriangles;
-    private Barycentric[] barycentrics;
+    private Mesh cleaningMesh;
 
-    // todo remove that and replace with real data
-    private Triangle2D input = new Triangle2D(
-               new Vector2(1, 0),
-               new Vector2(1, 1),
-               new Vector2(0, 1)
-           );
+    // lists of information corresponding every 3D triangle from source 3D object
+    private List<TextureObject>[] textureObjectsOnTriangles;
+    private Vector3[] gridVertices;
 
     public PlanarMesh(Mesh mesh3d, Texture2D objectMap)
     {
         createPlanarMesh(mesh3d, createObjects(objectMap));
+        createCleaningMesh();
     }
 
-    public Mesh getMesh()
+    private void createCleaningMesh()
     {
-        return mesh;
+        cleaningMesh = new Mesh();
+
+        int[] triangles = new int[6];
+        Vector3[] normals = new Vector3[6];
+        Vector3[] vertices = new Vector3[6];
+        Vector2[] uv = new Vector2[6];
+
+        vertices[0] = new Vector3(0, 0, 0);
+        vertices[1] = new Vector3(1, 1, 1);
+        vertices[2] = new Vector3(0, 1, 1);
+        vertices[3] = new Vector3(0, 0, 0);
+        vertices[4] = new Vector3(1, 0, 0);
+        vertices[5] = new Vector3(1, 1, 1);
+
+        // iterating through every point
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            uv[i] = new Vector2(0, 0);
+            triangles[i] = i;
+            normals[i] = Vector3.forward;
+        }
+
+        cleaningMesh.vertices = vertices;
+        cleaningMesh.uv = uv;
+        cleaningMesh.triangles = triangles;
+        cleaningMesh.normals = normals;
     }
 
     private void createPlanarMesh(Mesh mesh3d, List<TextureObject> objects)
     {
         mesh = new Mesh();
-        Debug.Log("Triangles count " + mesh3d.triangles.Length);
-        Debug.Log("UV count " + mesh3d.uv.LongLength);
-        Debug.Log("Vertices count " + mesh3d.vertices.Length);
+        //Debug.Log("Triangles count " + mesh3d.triangles.Length);
+        //Debug.Log("UV count " + mesh3d.uv.LongLength);
+        //Debug.Log("Vertices count " + mesh3d.vertices.Length);
 
-        int[] triangles = new int[mesh3d.triangles.Length];
-        Vector3[] vertices = new Vector3[mesh3d.triangles.Length];
-        Vector3[] normals = new Vector3[mesh3d.triangles.Length];
+        gridVertices = new Vector3[mesh3d.triangles.Length];
         textureObjectsOnTriangles = new List<TextureObject>[mesh3d.triangles.Length / 3];
-        barycentrics = new Barycentric[mesh3d.triangles.Length / 3];
-
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
@@ -51,9 +69,9 @@ public class PlanarMesh
 
             // verticles of new mesh will be created from UV points of 3D object
             // we need to normalize Y value because it's for texture
-            vertices[i] = new Vector3(u1.x, 1 - u1.y);
-            vertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
-            vertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
+            gridVertices[i] = new Vector3(u1.x, 1 - u1.y);
+            gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
+            gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
 
             foreach (TextureObject obj in objects)
             {
@@ -64,72 +82,74 @@ public class PlanarMesh
                     {
                         textureObjectsOnTriangles[i / 3] = new List<TextureObject>();
                     }
-                    textureObjectsOnTriangles[i / 3].Add(obj);
-                    barycentrics[i / 3] = a;
+                    textureObjectsOnTriangles[i / 3].Add(obj.copyWithBarycentric(a));
                 }
             }
-
-            // filling positions of points in triangle
-            triangles[i] = i;
-            triangles[i + 1] = i + 1;
-            triangles[i + 2] = i + 2;
-
-            // all normals will be fixed
-            normals[i] = Vector3.forward;
-            normals[i + 1] = Vector3.forward;
-            normals[i + 2] = Vector3.forward;
         }
-
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.normals = normals;
     }
 
     public void updateMesh(Mesh mesh3d)
     {
-        Vector2[] inputArray = input.toArray();
-        Vector2 nothing = new Vector2(0, 0);
-        Vector2[] uv = new Vector2[mesh3d.triangles.Length];
-        float size = 0.5f;
+        List<Vector2> uvList = new List<Vector2>();
+        List<Vector3> vertList = new List<Vector3>();
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
         {
-            // 3D triangle from 3D model
-            Vector3 p1 = mesh3d.vertices[mesh3d.triangles[i + 0]];
-            Vector3 p2 = mesh3d.vertices[mesh3d.triangles[i + 1]];
-            Vector3 p3 = mesh3d.vertices[mesh3d.triangles[i + 2]];
-
-            uv[i] = nothing;
-            uv[i + 1] = nothing;
-            uv[i + 2] = nothing;
-
-            // for now uv of output is static
-            // TODO It need to be dynamic!
             if (textureObjectsOnTriangles[i / 3] != null)
             {
+                // 3D triangle from 3D model
+                Triangle3D p = new Triangle3D(
+                    mesh3d.vertices[mesh3d.triangles[i + 0]],
+                    mesh3d.vertices[mesh3d.triangles[i + 1]],
+                    mesh3d.vertices[mesh3d.triangles[i + 2]]);
+
                 foreach (TextureObject obj in textureObjectsOnTriangles[i / 3])
                 {
-                    Triangle3D p = new Triangle3D(p1, p2, p3);
                     Triangle2D planarP = p.planar2();
                     planarP.applyScale(1 / obj.scale);
                     // that's interpolated center of ring on planar 3d triangle
-                    Vector2 interpolated = barycentrics[i / 3].Interpolate(planarP);
-                    Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
-                    Debug.Log("Planar triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
-                    Debug.Log("Interpolated (" + interpolated.x + ", " + interpolated.y + ")");
-                    
-                    planarP.applyTranslation(-interpolated.x + size, -interpolated.y + size);
+                    Vector2 interpolated = obj.barycentric.Interpolate(planarP);
 
-                    uv[i] = planarP.p1;
-                    uv[i + 1] = planarP.p2;
-                    uv[i + 2] = planarP.p3;
+                    //Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
+                    //Debug.Log("Planar triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
+                    //Debug.Log("Interpolated (" + interpolated.x + ", " + interpolated.y + ")");
 
-                    Debug.Log("UV triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
+                    planarP.applyTranslation(-interpolated.x + 0.5f, -interpolated.y + 0.5f);
+
+                    uvList.Add(planarP.p1);
+                    uvList.Add(planarP.p2);
+                    uvList.Add(planarP.p3);
+
+                    vertList.Add(gridVertices[i]);
+                    vertList.Add(gridVertices[i + 1]);
+                    vertList.Add(gridVertices[i + 2]);
+
+                    //Debug.Log("UV triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
+                    //Debug.Log("UV triangle (" + gridVertices[i].x + ", " + gridVertices[i].y + ", " + gridVertices[i].y + ") (" + gridVertices[i + 1].x + ", " + gridVertices[i + 1].y + ", " + gridVertices[i+1].y + ") (" + gridVertices[i + 2].x + ", " + gridVertices[i + 2].y + ", " + gridVertices[i+2].y + ")");
                 }
             }
         }
-        mesh.uv = uv;
+
+        mesh.vertices = vertList.ToArray();
+        mesh.uv = uvList.ToArray();
+        fillMeshTriangles();
+    }
+
+    public void fillMeshTriangles()
+    {
+        int[] triangles = new int[mesh.vertices.Length];
+        Vector3[] normals = new Vector3[mesh.vertices.Length];
+        // iterating through every point
+        for (int i = 0; i < mesh.vertices.Length; i++)
+        {
+            // filling positions of points in triangle
+            triangles[i] = i;
+            // all normals will be fixed
+            normals[i] = Vector3.forward;
+        }
+        mesh.triangles = triangles;
+        mesh.normals = normals;
     }
 
     private List<TextureObject> createObjects(Texture2D objectMap)
@@ -177,5 +197,57 @@ public class PlanarMesh
             AssetDatabase.ImportAsset(assetPath);
             AssetDatabase.Refresh();
         }
+    }
+
+    public Texture2D renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass, int passCount)
+    {
+        // get a temporary RenderTexture. It will be canvas for rendering on it, but not output 
+        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * passCount, output.height);
+
+        // set the RenderTexture as global target (that means GL too)
+        RenderTexture.active = renderTexture;
+
+        // render GL immediately to the active render texture
+        renderPlanarMeshOnTexture(stamp, background, pass, passCount);
+
+        // read the active RenderTexture into a new Texture2D
+        output.ReadPixels(new Rect(pass * output.width, 0, output.width + pass * output.width, output.height), 0, 0);
+
+        // clean up after the party
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(renderTexture);
+
+        // return the goods
+        output.Apply();
+
+        return output;
+    }
+
+    private void setMaterialByTexture(Texture2D stamp)
+    {
+        // create material for distortedMap rendering
+        Material material = new Material(Shader.Find("Sprites/Default"));
+        material.mainTexture = stamp;
+        material.SetPass(0);
+    }
+
+    private void setMaterialByColor(Color color)
+    {
+        // create material for distortedMap rendering
+        Material material = new Material(Shader.Find("Sprites/Default"));
+        material.color = color;
+        material.SetPass(0);
+    }
+
+    private void renderPlanarMeshOnTexture(Texture2D stamp, Color background, int pass, int passCount)
+    {
+        GL.PushMatrix();
+        GL.LoadPixelMatrix(0 - pass, passCount - pass, 1, 0);
+        setMaterialByColor(background);
+        Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
+        setMaterialByTexture(stamp);
+        Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
+        setMaterialByTexture(null);
+        GL.PopMatrix();
     }
 }

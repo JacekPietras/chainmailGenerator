@@ -7,12 +7,12 @@ using UnityEngine;
 
 public class MaterialEditor : MonoBehaviour
 {
-    // 3D object that will be raytraced to textures
-    public GameObject item;
     // resolution of raytraced maps
     public int itemResolution = 512;
     // resolution of final texture for object
     public int textureResolution = 1024;
+    // 3D object that will be raytraced to textures
+    public GameObject item;
     public Texture2D objectMap;
 
     private RingGenerator generator;
@@ -43,7 +43,6 @@ public class MaterialEditor : MonoBehaviour
         distortedNormalMap = new Texture2D(textureResolution, textureResolution);
 
         setTextures();
-        //material.SetTexture("_MainTex", distortedNormalMap);
 
         planarMesh = new PlanarMesh(mesh3d, objectMap);
     }
@@ -59,6 +58,11 @@ public class MaterialEditor : MonoBehaviour
 
     void Update()
     {
+        if(this == null)
+        {
+            Debug.Log("not attached");
+            return;
+        }
         updateDistortedMap();
         Debug.Log("update of planar mesh");
     }

@@ -124,4 +124,22 @@ public class Triangle2D
         p2.y += Ty;
         p3.y += Ty;
     }
+
+    public void rotate(float angle, Vector2 center)
+    {
+        p1 = rotatePoint(p1, center, angle);
+        p2 = rotatePoint(p2, center, angle);
+        p3 = rotatePoint(p3, center, angle);
+    }
+
+    private Vector2 rotatePoint(Vector2 pointToRotate, Vector2 centerPoint, float angleInDegrees)
+    {
+        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
+        float cosTheta = Mathf.Cos(angleInRadians);
+        float sinTheta = Mathf.Sin(angleInRadians);
+        return new Vector2(
+                (cosTheta * (pointToRotate.x - centerPoint.x) - sinTheta * (pointToRotate.y - centerPoint.y) + centerPoint.x),
+                (sinTheta * (pointToRotate.x - centerPoint.x) + cosTheta * (pointToRotate.y - centerPoint.y) + centerPoint.y)
+        );
+    }
 }

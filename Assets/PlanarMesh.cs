@@ -110,6 +110,8 @@ public class PlanarMesh
                     planarP.applyScale(1 / obj.scale);
                     // that's interpolated center of ring on planar 3d triangle
                     Vector2 interpolated = obj.barycentric.Interpolate(planarP);
+                   // planarP.rotate(obj.rotation, interpolated);
+                    planarP.rotate(Mathf.Sin(Time.realtimeSinceStartup), interpolated);
 
                     //Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
                     //Debug.Log("Planar triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");

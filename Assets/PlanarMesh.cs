@@ -38,7 +38,7 @@ public class PlanarMesh
         // iterating through every point
         for (int i = 0; i < vertices.Length; i++)
         {
-            uv[i] = new Vector2(vertices[i].x, vertices[i].y);
+            uv[i] = new Vector2(vertices[i].x, 1 - vertices[i].y);
             triangles[i] = i;
             normals[i] = Vector3.forward;
         }
@@ -200,8 +200,14 @@ public class PlanarMesh
             AssetDatabase.Refresh();
         }
     }
-    
+
     public void renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass)
+    { renderDistortedMap(stamp, output, background, null, pass); }
+
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Texture2D background, int pass)
+    { renderDistortedMap(stamp, output, Color.black, background, pass); }
+
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color backgroundC, Texture2D backgroundT, int pass)
     {
         // get a temporary RenderTexture. It will be canvas for rendering on it, but not output 
         RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height);
@@ -210,7 +216,7 @@ public class PlanarMesh
         RenderTexture.active = renderTexture;
 
         // render GL immediately to the active render texture
-        renderPlanarMeshOnTexture(stamp, background, pass);
+        renderPlanarMeshOnTexture(stamp, backgroundC, backgroundT, pass);
 
         // read the active RenderTexture into a new Texture2D
         output.ReadPixels(new Rect(pass * output.width, 0, output.width * (pass + 1), output.height), 0, 0);
@@ -239,16 +245,15 @@ public class PlanarMesh
         material.SetPass(0);
     }
 
-    private void renderPlanarMeshOnTexture(Texture2D stamp, Color background, int pass)
+    private void renderPlanarMeshOnTexture(Texture2D stamp, Color backgroundC, Texture2D backgroundT, int pass)
     {
         GL.PushMatrix();
         GL.LoadPixelMatrix(0 - pass, 1, 1, 0);
-        //    GL.Clear(false, true, background);
-        setMaterialByColor(background);
+        if (backgroundT == null) { setMaterialByColor(backgroundC); }
+        else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
-        setMaterialByTexture(null);
         GL.PopMatrix();
     }
 }

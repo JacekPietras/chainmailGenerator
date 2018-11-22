@@ -6,9 +6,9 @@ public class MaterialEditorBackground : MaterialEditorAbstract
 {
     public Texture2D colorMap;
 
-    public override Texture2D getHeightMap() { return null; }
-
-    public override Texture2D getColorMap() { return colorMap; }
-
-    public override Texture2D getNormalMap() { return null; }
+    public override Texture2D getColorMap()
+    {
+        if (colorMap == null && lowerLayer != null) { return lowerLayer.getNormalMap(); }
+        else { return colorMap; }
+    }
 }

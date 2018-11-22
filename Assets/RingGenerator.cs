@@ -15,12 +15,14 @@ public class RingGenerator
     // generated textures
     private Texture2D textureHeight;
     private Texture2D normalTexture;
+    private Texture2D edgeTexture;
     // generated 2D array of raytraced height
     // we don't using generated heightMap because
     // in float we can have more accurate data
     private float[,] heights;
     private bool[,] presence;
     private float strengthOfGeneratedNormalMap = -1f;
+    private float strengthOfGeneratedEdgeMap = -1f;
 
     public RingGenerator(GameObject item, int resolution)
     {
@@ -191,10 +193,86 @@ public class RingGenerator
                 }
             }
         }
-        
+
         normalTexture.wrapMode = TextureWrapMode.Clamp;
         normalTexture.Apply();
 
         return normalTexture;
+    }
+
+    // returns generated normalMap of input 3D object
+    // strength in argument is for how raised output texture should be
+    public Texture2D getEdgeMap(float strength = 30, int spray = 2)
+    {
+        // if texture was already generated there is no need
+        // to generate it again
+        // also strength must be the same
+        if (edgeTexture != null && strengthOfGeneratedEdgeMap == strength)
+            return edgeTexture;
+        else
+            strengthOfGeneratedEdgeMap = strength;
+
+        // If heightMap wasn't generated, we should generate it now
+        if (textureHeight == null)
+            getHeightMap();
+
+        edgeTexture = new Texture2D(textureHeight.width, textureHeight.height, TextureFormat.ARGB32, textureHeight.mipmapCount > 1);
+        Color blank = new Color(0, 0, 0, 0);
+
+        for (int y = 0; y < textureHeight.height; y++)
+        {
+            for (int x = 0; x < textureHeight.width; x++)
+            {
+                if (presence[x, y])
+                {
+                    float change = (1 - (getVariationX(x - spray, x + spray, y) + getVariationY(y - spray, y + spray, x)) / 2f * strength) * heights[x, y];
+
+                    edgeTexture.SetPixel(x, y, new Color(change, change, change, 1));
+                }
+                else { edgeTexture.SetPixel(x, y, blank); }
+            }
+        }
+
+        edgeTexture.wrapMode = TextureWrapMode.Clamp;
+        edgeTexture.Apply();
+
+        return edgeTexture;
+    }
+
+    private float getVariationX(int fromX, int toX, int y)
+    {
+        if (fromX < 0) { fromX = 0; }
+        if (toX >= textureHeight.width) toX = textureHeight.width - 1;
+
+        float min = heights[fromX++, y];
+        float max = min;
+        float tmp;
+
+        while (fromX <= toX)
+        {
+            tmp = heights[fromX++, y];
+            if (tmp > max) { max = tmp; }
+            else if (tmp < min) { min = tmp; }
+        }
+
+        return Mathf.Abs(max - min);
+    }
+    private float getVariationY(int fromY, int toY, int x)
+    {
+        if (fromY < 0) { fromY = 0; }
+        if (toY >= textureHeight.height) toY = textureHeight.height - 1;
+
+        float min = heights[x, fromY++];
+        float max = min;
+        float tmp;
+
+        while (fromY <= toY)
+        {
+            tmp = heights[x, fromY++];
+            if (tmp > max) { max = tmp; }
+            else if (tmp < min) { min = tmp; }
+        }
+
+        return Mathf.Abs(max - min);
     }
 }

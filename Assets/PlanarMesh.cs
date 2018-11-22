@@ -38,7 +38,7 @@ public class PlanarMesh
         // iterating through every point
         for (int i = 0; i < vertices.Length; i++)
         {
-            uv[i] = new Vector2(0, 0);
+            uv[i] = new Vector2(vertices[i].x, vertices[i].y);
             triangles[i] = i;
             normals[i] = Vector3.forward;
         }
@@ -110,7 +110,7 @@ public class PlanarMesh
                     planarP.applyScale(1 / obj.scale);
                     // that's interpolated center of ring on planar 3d triangle
                     Vector2 interpolated = obj.barycentric.Interpolate(planarP);
-                   // planarP.rotate(obj.rotation, interpolated);
+                    // planarP.rotate(obj.rotation, interpolated);
                     planarP.rotate(Mathf.Sin(Time.realtimeSinceStartup), interpolated);
 
                     //Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
@@ -200,20 +200,20 @@ public class PlanarMesh
             AssetDatabase.Refresh();
         }
     }
-
-    public Texture2D renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass, int passCount)
+    
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass)
     {
         // get a temporary RenderTexture. It will be canvas for rendering on it, but not output 
-        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * passCount, output.height);
+        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height);
 
         // set the RenderTexture as global target (that means GL too)
         RenderTexture.active = renderTexture;
 
         // render GL immediately to the active render texture
-        renderPlanarMeshOnTexture(stamp, background, pass, passCount);
+        renderPlanarMeshOnTexture(stamp, background, pass);
 
         // read the active RenderTexture into a new Texture2D
-        output.ReadPixels(new Rect(pass * output.width, 0, output.width + pass * output.width, output.height), 0, 0);
+        output.ReadPixels(new Rect(pass * output.width, 0, output.width * (pass + 1), output.height), 0, 0);
 
         // clean up after the party
         RenderTexture.active = null;
@@ -221,8 +221,6 @@ public class PlanarMesh
 
         // return the goods
         output.Apply();
-
-        return output;
     }
 
     private void setMaterialByTexture(Texture2D stamp)
@@ -241,10 +239,11 @@ public class PlanarMesh
         material.SetPass(0);
     }
 
-    private void renderPlanarMeshOnTexture(Texture2D stamp, Color background, int pass, int passCount)
+    private void renderPlanarMeshOnTexture(Texture2D stamp, Color background, int pass)
     {
         GL.PushMatrix();
-        GL.LoadPixelMatrix(0 - pass, passCount - pass, 1, 0);
+        GL.LoadPixelMatrix(0 - pass, 1, 1, 0);
+        //    GL.Clear(false, true, background);
         setMaterialByColor(background);
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);

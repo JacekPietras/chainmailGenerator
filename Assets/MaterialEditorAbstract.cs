@@ -16,6 +16,20 @@ public abstract class MaterialEditorAbstract : MonoBehaviour
         init();
     }
 
+    void Update()
+    {
+        if (this == null)
+        {
+            Debug.Log("not attached");
+            return;
+        }
+        if (higherLayer == null)
+        {
+            updateDistortedMap();
+        }
+        Debug.Log("update of planar mesh");
+    }
+
     public virtual void init() { }
 
     protected void fillLayers()
@@ -71,7 +85,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour
         if (lowerLayer != null) { return lowerLayer.getNormalMap(); }
         else { return null; }
     }
-    
+
     public virtual int getUsedPassesCount()
     {
         if (lowerLayer != null) { return lowerLayer.getUsedPassesCount(); }

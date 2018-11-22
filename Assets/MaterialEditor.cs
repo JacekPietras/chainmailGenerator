@@ -64,30 +64,18 @@ public class MaterialEditor : MaterialEditorAbstract
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
     }
 
-    void Update()
-    {
-        if (this == null)
-        {
-            Debug.Log("not attached");
-            return;
-        }
-        if (higherLayer == null)
-        {
-            updateDistortedMap();
-        }
-        Debug.Log("update of planar mesh");
-    }
-
     public override void updateDistortedMap()
     {
-        int passShift = getUsedPassesCount()-3;
+        int passShift = getUsedPassesCount() - 3;
 
         planarMesh.updateMesh(mesh3d);
         planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0 + passShift);
         planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1 + passShift);
+
+        if (lowerLayer != null) { lowerLayer.updateDistortedMap(); }
+
         if (lowerLayer.getHeightMap() != null)
         {
-            lowerLayer.updateDistortedMap();
             planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2 + passShift);
 
             // merge lower layers into distorted maps
@@ -115,7 +103,7 @@ public class MaterialEditor : MaterialEditorAbstract
             distortedHeightMap.SetPixels32(combinedHeight);
             distortedHeightMap.Apply();
         }
-        else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2); }
+        else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2 + passShift); }
 
         setTextures();
     }

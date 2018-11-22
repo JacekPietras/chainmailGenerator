@@ -13,6 +13,11 @@ public class PlanarMesh
     private List<TextureObject>[] textureObjectsOnTriangles;
     private Vector3[] gridVertices;
 
+    public PlanarMesh()
+    {
+        createCleaningMesh();
+    }
+
     public PlanarMesh(Mesh mesh3d, Texture2D objectMap)
     {
         createPlanarMesh(mesh3d, createObjects(objectMap));
@@ -255,5 +260,24 @@ public class PlanarMesh
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();
+    }
+    
+    public void renderMapOver(Texture2D stamp, Texture2D output, Texture2D backgroundT, int pass)
+    {
+        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height);
+        RenderTexture.active = renderTexture;
+
+        GL.PushMatrix();
+        GL.LoadPixelMatrix(0 - pass, 1, 1, 0);
+        setMaterialByTexture(backgroundT);
+        Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
+        setMaterialByTexture(stamp);
+        Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
+        GL.PopMatrix();
+
+        output.ReadPixels(new Rect(pass * output.width, 0, output.width * (pass + 1), output.height), 0, 0);
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(renderTexture);
+        output.Apply();
     }
 }

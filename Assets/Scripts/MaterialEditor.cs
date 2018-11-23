@@ -15,7 +15,8 @@ public class MaterialEditor : MaterialEditorAbstract
     public GameObject item;
     public Texture2D objectMap;
     // additional height for layer to shift elements that are on other ones
-    public bool heightShift;
+    public bool heightShift = false;
+    public Vector3 stampRotation = new Vector3(-90, 0, 0);
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -40,12 +41,12 @@ public class MaterialEditor : MaterialEditorAbstract
         mesh3d = GetComponent<MeshFilter>().mesh;
 
         // generates raytraced maps from 3D object
-        generator = new RingGenerator(item, itemResolution);
+        generator = new RingGenerator(item, itemResolution, stampRotation);
 
         // raytracing stamp textures from 3D object
         heightMap = generator.getHeightMap();
         normalMap = generator.getNormalMap();
-        edgeMap = generator.getEdgeMap(15, 3);
+        edgeMap = generator.getEdgeMap(new Color(.7f, .7f, .72f, 1), 15, 3);
 
         // creation of resusable textures that will be used on model
         distortedHeightMap = new Texture2D(textureResolution, textureResolution);
@@ -68,52 +69,56 @@ public class MaterialEditor : MaterialEditorAbstract
 
     public override void updateDistortedMap()
     {
+        if (lowerLayer != null) { lowerLayer.updateDistortedMap(); }
         int passShift = getUsedPassesCount() - 3;
 
         planarMesh.updateMesh(mesh3d);
-        if (heightShift && lowerLayer.getHeightMap() != null)
+
+        if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null)
         {
-            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0 + passShift);
-            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, lowerLayer.getNormalMap(), 1 + passShift);
+            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0, passShift);
+            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, lowerLayer.getNormalMap(), 1, passShift);
         }
         else
         {
-            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0 + passShift);
-            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1 + passShift);
+            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0, passShift);
+            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1, passShift);
         }
 
-        if (lowerLayer != null) { lowerLayer.updateDistortedMap(); }
-
-        if (lowerLayer.getHeightMap() != null && !heightShift)
+        if (lowerLayer != null)
         {
-            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2 + passShift);
-
-            // merge lower layers into distorted maps
-            bool[] mask = getMask();
-            Color32[] combinedColor = distortedColorMap.GetPixels32();
-            Color32[] combinedHeight = distortedHeightMap.GetPixels32();
-            Color32[] combinedNormal = distortedNormalMap.GetPixels32();
-            Color32[] lowerColor = getLowerLayerColorMapPixels();
-            Color32[] lowerHeight = getLowerLayerHeightMapPixels();
-            Color32[] lowerNormal = getLowerLayerNormalMapPixels();
-
-            for (int i = 0; i < combinedColor.Length; i++)
+            if (lowerLayer.getHeightMap() != null && !heightShift)
             {
-                if (mask[i])
+                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
+
+                // merge lower layers into distorted maps
+                bool[] mask = getMask();
+                Color32[] combinedColor = distortedColorMap.GetPixels32();
+                Color32[] combinedHeight = distortedHeightMap.GetPixels32();
+                Color32[] combinedNormal = distortedNormalMap.GetPixels32();
+                Color32[] lowerColor = getLowerLayerColorMapPixels();
+                Color32[] lowerHeight = getLowerLayerHeightMapPixels();
+                Color32[] lowerNormal = getLowerLayerNormalMapPixels();
+
+                for (int i = 0; i < combinedColor.Length; i++)
                 {
-                    combinedColor[i] = lowerColor[i];
-                    combinedHeight[i] = lowerHeight[i];
-                    combinedNormal[i] = lowerNormal[i];
+                    if (mask[i])
+                    {
+                        combinedColor[i] = lowerColor[i];
+                        combinedHeight[i] = lowerHeight[i];
+                        combinedNormal[i] = lowerNormal[i];
+                    }
                 }
+                distortedColorMap.SetPixels32(combinedColor);
+                distortedColorMap.Apply();
+                distortedNormalMap.SetPixels32(combinedNormal);
+                distortedNormalMap.Apply();
+                distortedHeightMap.SetPixels32(combinedHeight);
+                distortedHeightMap.Apply();
             }
-            distortedColorMap.SetPixels32(combinedColor);
-            distortedColorMap.Apply();
-            distortedNormalMap.SetPixels32(combinedNormal);
-            distortedNormalMap.Apply();
-            distortedHeightMap.SetPixels32(combinedHeight);
-            distortedHeightMap.Apply();
+            else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2, passShift); }
         }
-        else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2 + passShift); }
+        else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift); }
 
         setTextures();
     }

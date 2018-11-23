@@ -23,12 +23,14 @@ public class RingGenerator
     private bool[,] presence;
     private float strengthOfGeneratedNormalMap = -1f;
     private float strengthOfGeneratedEdgeMap = -1f;
+    private Vector3 rotation;
 
-    public RingGenerator(GameObject item, int resolution)
+    public RingGenerator(GameObject item, int resolution, Vector3 rotation)
     {
         this.item = item;
         if (resolution > 0)
             this.resolution = resolution;
+        this.rotation = rotation;
     }
 
     // returns generated heightMap of input 3D object
@@ -44,7 +46,7 @@ public class RingGenerator
         if (!collider)
         {
             //Add a collider to our source object if it does not exist.
-            go = GameObject.Instantiate(item, new Vector3(), Quaternion.Euler(-90, 0, 0)) as GameObject;
+            go = GameObject.Instantiate(item, new Vector3(), Quaternion.Euler(rotation)) as GameObject;
             collider = go.AddComponent<MeshCollider>();
         }
         Bounds bounds = collider.bounds;
@@ -234,10 +236,10 @@ public class RingGenerator
         normalTexture.wrapMode = TextureWrapMode.Clamp;
         normalTexture.Apply();
     }
-
+    
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be
-    public Texture2D getEdgeMap(float strength = 30, int spray = 2)
+    public Texture2D getEdgeMap(Color color, float strength = 30, int spray = 2)
     {
         // if texture was already generated there is no need
         // to generate it again
@@ -260,9 +262,9 @@ public class RingGenerator
             {
                 if (presence[x, y])
                 {
-                    float change = (1 - (getVariationX(x - spray, x + spray, y) + getVariationY(y - spray, y + spray, x)) / 2f * strength) * heights[x, y];
+                    float change = (1 - (getVariationX(x - spray, x + spray, y) + getVariationY(y - spray, y + spray, x)) / 2f * strength);
 
-                    edgeTexture.SetPixel(x, y, new Color(change, change, change, 1));
+                    edgeTexture.SetPixel(x, y, new Color(color.r*change, color.g * change, color.b * change, 1));
                 }
                 else { edgeTexture.SetPixel(x, y, blank); }
             }

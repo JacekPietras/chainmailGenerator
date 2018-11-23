@@ -57,7 +57,7 @@ public class MaterialEditorBackground : MaterialEditorAbstract
                     if (planarMesh == null) { planarMesh = new PlanarMesh(); }
 
                     drawingOver = true;
-                    planarMesh.renderMapOver(colorMap, distortedColorMap, lowerLayer.getColorMap(), getUsedPassesCount() - 1);
+                    planarMesh.renderMapOver(colorMap, distortedColorMap, lowerLayer.getColorMap(), 0, getUsedPassesCount() - 1);
                 }
                 if (lowerLayer.getHeightMap() != null)
                 {

@@ -206,25 +206,25 @@ public class PlanarMesh
         }
     }
 
-    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass)
-    { renderDistortedMap(stamp, output, background, null, pass); }
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass, int row)
+    { renderDistortedMap(stamp, output, background, null, pass, row); }
 
-    public void renderDistortedMap(Texture2D stamp, Texture2D output, Texture2D background, int pass)
-    { renderDistortedMap(stamp, output, Color.black, background, pass); }
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Texture2D background, int pass, int row)
+    { renderDistortedMap(stamp, output, Color.black, background, pass, row); }
 
-    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color backgroundC, Texture2D backgroundT, int pass)
+    public void renderDistortedMap(Texture2D stamp, Texture2D output, Color backgroundC, Texture2D backgroundT, int pass, int row)
     {
         // get a temporary RenderTexture. It will be canvas for rendering on it, but not output 
-        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height);
+        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height * (row + 1));
 
         // set the RenderTexture as global target (that means GL too)
         RenderTexture.active = renderTexture;
 
         // render GL immediately to the active render texture
-        renderPlanarMeshOnTexture(stamp, backgroundC, backgroundT, pass);
+        renderPlanarMeshOnTexture(stamp, backgroundC, backgroundT, pass, row);
 
         // read the active RenderTexture into a new Texture2D
-        output.ReadPixels(new Rect(pass * output.width, 0, output.width * (pass + 1), output.height), 0, 0);
+        output.ReadPixels(new Rect(output.width * pass, output.height * row, output.width * (pass + 1), output.height * (row + 1)), 0, 0);
 
         // clean up after the party
         RenderTexture.active = null;
@@ -250,10 +250,10 @@ public class PlanarMesh
         material.SetPass(0);
     }
 
-    private void renderPlanarMeshOnTexture(Texture2D stamp, Color backgroundC, Texture2D backgroundT, int pass)
+    private void renderPlanarMeshOnTexture(Texture2D stamp, Color backgroundC, Texture2D backgroundT, int pass, int row)
     {
         GL.PushMatrix();
-        GL.LoadPixelMatrix(0 - pass, 1, 1, 0);
+        GL.LoadPixelMatrix(0 - pass, 1, 1, 0 - row);
         if (backgroundT == null) { setMaterialByColor(backgroundC); }
         else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
@@ -261,10 +261,10 @@ public class PlanarMesh
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();
     }
-    
-    public void renderMapOver(Texture2D stamp, Texture2D output, Texture2D backgroundT, int pass)
+
+    public void renderMapOver(Texture2D stamp, Texture2D output, Texture2D backgroundT, int pass, int row)
     {
-        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height);
+        RenderTexture renderTexture = RenderTexture.GetTemporary(output.width * (pass + 1), output.height * (row + 1));
         RenderTexture.active = renderTexture;
 
         GL.PushMatrix();
@@ -275,7 +275,7 @@ public class PlanarMesh
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();
 
-        output.ReadPixels(new Rect(pass * output.width, 0, output.width * (pass + 1), output.height), 0, 0);
+        output.ReadPixels(new Rect(output.width * pass, output.height * row, output.width * (pass + 1), output.height * (row + 1)), 0, 0);
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(renderTexture);
         output.Apply();

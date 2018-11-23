@@ -105,6 +105,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d7681333290a7148937f8f9cc581a0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
+  layerName: 
   itemResolution: 512
   textureResolution: 1024
+  item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
+  objectMap: {fileID: 0}
+  heightShift: 0
+  stampRotation: {x: -90, y: 0, z: 0}

@@ -249,9 +249,9 @@ GameObject:
   - component: {fileID: 915320577}
   - component: {fileID: 915320570}
   - component: {fileID: 915320571}
+  - component: {fileID: 915320578}
   - component: {fileID: 915320575}
   - component: {fileID: 915320572}
-  - component: {fileID: 915320578}
   m_Layer: 0
   m_Name: boxForRandomize
   m_TagString: Untagged

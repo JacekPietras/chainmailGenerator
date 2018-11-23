@@ -200,6 +200,41 @@ public class RingGenerator
         return normalTexture;
     }
 
+    public static void printNormalMap(Texture2D normalTexture, Texture2D textureHeight, int strength = 30)
+    {
+        for (int y = 0; y < textureHeight.height; y++)
+        {
+            for (int x = 0; x < textureHeight.width; x++)
+            {
+                int x_1 = x - 1;
+                if (x_1 < 0)
+                    x_1 = textureHeight.width - 1; // repeat the texture so use the opposit side
+                int x1 = x + 1;
+                if (x1 >= textureHeight.width)
+                    x1 = 0; // repeat the texture so use the opposit side
+                int y_1 = y - 1;
+                if (y_1 < 0)
+                    y_1 = textureHeight.height - 1; // repeat the texture so use the opposit side
+                int y1 = y + 1;
+                if (y1 >= textureHeight.height)
+                    y1 = 0; // repeat the texture so use the opposit side
+                float grayX_1 = textureHeight.GetPixel(x_1, y).r;
+                float grayX1 = textureHeight.GetPixel(x1, y).r;
+                float grayY_1 = textureHeight.GetPixel(x, y_1).r;
+                float grayY1 = textureHeight.GetPixel(x, y1).r;
+                Vector3 vx = new Vector3(0, 1, (grayX_1 - grayX1) * strength);
+                Vector3 vy = new Vector3(1, 0, (grayY_1 - grayY1) * strength);
+                Vector3 n = Vector3.Cross(vy, vx).normalized;
+                Vector3 color = ((n + Vector3.one) * 0.5f);
+
+                normalTexture.SetPixel(x, y, new Vector4(color.x, color.y, color.z, 1));
+            }
+        }
+
+        normalTexture.wrapMode = TextureWrapMode.Clamp;
+        normalTexture.Apply();
+    }
+
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be
     public Texture2D getEdgeMap(float strength = 30, int spray = 2)
@@ -257,6 +292,7 @@ public class RingGenerator
 
         return Mathf.Abs(max - min);
     }
+
     private float getVariationY(int fromY, int toY, int x)
     {
         if (fromY < 0) { fromY = 0; }

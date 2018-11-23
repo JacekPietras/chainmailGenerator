@@ -14,6 +14,8 @@ public class MaterialEditor : MaterialEditorAbstract
     // 3D object that will be raytraced to textures
     public GameObject item;
     public Texture2D objectMap;
+    // additional height for layer to shift elements that are on other ones
+    public bool heightShift;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -69,12 +71,20 @@ public class MaterialEditor : MaterialEditorAbstract
         int passShift = getUsedPassesCount() - 3;
 
         planarMesh.updateMesh(mesh3d);
-        planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0 + passShift);
-        planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1 + passShift);
+        if (heightShift && lowerLayer.getHeightMap() != null)
+        {
+            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0 + passShift);
+            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, lowerLayer.getNormalMap(), 1 + passShift);
+        }
+        else
+        {
+            planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0 + passShift);
+            planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1 + passShift);
+        }
 
         if (lowerLayer != null) { lowerLayer.updateDistortedMap(); }
 
-        if (lowerLayer.getHeightMap() != null)
+        if (lowerLayer.getHeightMap() != null && !heightShift)
         {
             planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2 + passShift);
 

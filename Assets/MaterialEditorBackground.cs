@@ -7,6 +7,8 @@ public class MaterialEditorBackground : MaterialEditorAbstract
     public Texture2D colorMap;
     private bool drawingOver = false;
     private Texture2D distortedColorMap;
+    private Texture2D distortedHeightMap;
+    private Texture2D distortedNormalMap;
     private PlanarMesh planarMesh;
 
     public override Texture2D getColorMap()
@@ -16,21 +18,65 @@ public class MaterialEditorBackground : MaterialEditorAbstract
         else { return colorMap; }
     }
 
+    public override Texture2D getHeightMap()
+    {
+        if (distortedHeightMap != null) { return distortedHeightMap; }
+        else if (lowerLayer != null) { return lowerLayer.getHeightMap(); }
+        else { return null; }
+    }
+
+    public override Texture2D getNormalMap()
+    {
+        if (distortedNormalMap != null) { return distortedNormalMap; }
+        else if (lowerLayer != null) { return lowerLayer.getNormalMap(); }
+        else { return null; }
+    }
+
+    void OnDestroy()
+    {
+        // map is also saved in asset files so we can use it in other places
+        if (distortedNormalMap != null)
+            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
+        if (distortedHeightMap != null)
+            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
+        if (distortedColorMap != null)
+            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
+    }
+
     public override void updateDistortedMap()
     {
         if (lowerLayer != null)
         {
             lowerLayer.updateDistortedMap();
-
-            if (lowerLayer.getColorMap() != null && colorMap != null)
+            if (colorMap != null)
             {
-                if (distortedColorMap == null) { distortedColorMap = new Texture2D(lowerLayer.getColorMap().width, lowerLayer.getColorMap().height); }
-                if (planarMesh == null) { planarMesh = new PlanarMesh(); }
-                
-                drawingOver = true;
-                planarMesh.renderMapOver(colorMap, distortedColorMap, lowerLayer.getColorMap(), getUsedPassesCount() - 1);
+                if (lowerLayer.getColorMap() != null)
+                {
+                    if (distortedColorMap == null) { distortedColorMap = new Texture2D(lowerLayer.getColorMap().width, lowerLayer.getColorMap().height); }
+                    if (planarMesh == null) { planarMesh = new PlanarMesh(); }
+
+                    drawingOver = true;
+                    planarMesh.renderMapOver(colorMap, distortedColorMap, lowerLayer.getColorMap(), getUsedPassesCount() - 1);
+                }
+                if (lowerLayer.getHeightMap() != null)
+                {
+                    if (distortedHeightMap == null) { distortedHeightMap = new Texture2D(lowerLayer.getHeightMap().width, lowerLayer.getHeightMap().height); }
+                    if (distortedNormalMap == null) { distortedNormalMap = new Texture2D(lowerLayer.getNormalMap().width, lowerLayer.getNormalMap().height); }
+
+                    Color32[] combinedHeight = distortedColorMap.GetPixels32();
+                    Color32[] lowerHeight = lowerLayer.getHeightMap().GetPixels32();
+                    for (int i = 0; i < combinedHeight.Length; i++)
+                    {
+                        float color = Mathf.Min(1, lowerHeight[i].r + combinedHeight[i].a);
+                        combinedHeight[i] = new Color(color, color, color, 1);
+                    }
+                    distortedHeightMap.SetPixels32(combinedHeight);
+                    distortedHeightMap.Apply();
+
+                    RingGenerator.printNormalMap(distortedNormalMap, distortedHeightMap);
+                }
+                setTextures();
             }
-            setTextures();
         }
     }
 

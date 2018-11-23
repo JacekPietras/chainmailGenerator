@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -63,14 +64,14 @@ public class MaterialEditorBackground : MaterialEditorAbstract
                     if (distortedHeightMap == null) { distortedHeightMap = new Texture2D(lowerLayer.getHeightMap().width, lowerLayer.getHeightMap().height); }
                     if (distortedNormalMap == null) { distortedNormalMap = new Texture2D(lowerLayer.getNormalMap().width, lowerLayer.getNormalMap().height); }
 
-                    Color32[] combinedHeight = distortedColorMap.GetPixels32();
-                    Color32[] lowerHeight = lowerLayer.getHeightMap().GetPixels32();
+                    Color[] combinedHeight = getColorMapPixels();
+                    Color[] lowerHeight = lowerLayer.getHeightMap().GetPixels();
                     for (int i = 0; i < combinedHeight.Length; i++)
                     {
                         float color = Mathf.Min(1, lowerHeight[i].r + combinedHeight[i].a);
                         combinedHeight[i] = new Color(color, color, color, 1);
                     }
-                    distortedHeightMap.SetPixels32(combinedHeight);
+                    distortedHeightMap.SetPixels(combinedHeight);
                     distortedHeightMap.Apply();
 
                     RingGenerator.printNormalMap(distortedNormalMap, distortedHeightMap);
@@ -79,6 +80,22 @@ public class MaterialEditorBackground : MaterialEditorAbstract
             }
         }
     }
+
+    private Color[] getColorMapPixels()
+    {
+        try
+        {
+            return colorMap.GetPixels();
+        }
+        catch (Exception ignored)
+        {
+            Debug.LogError(ignored.Data);
+            // use in case of error with importer.
+            PlanarMesh.SetTextureImporterFormat(colorMap, true);
+            return colorMap.GetPixels();
+        }
+    }
+
 
     public override int getUsedPassesCount()
     {

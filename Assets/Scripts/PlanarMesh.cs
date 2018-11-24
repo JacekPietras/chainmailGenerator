@@ -14,6 +14,9 @@ public class PlanarMesh
     private Vector3[] gridVertices;
     private int[][] neighbourtriangles;
     private int[][] neighbourVerticles;
+    private Edge[][] neighbourEdges;
+
+    private const float NORMALIZATION_STRENGTH = 0.5f;
 
     public PlanarMesh()
     {
@@ -67,6 +70,7 @@ public class PlanarMesh
         textureObjectsOnTriangles = new List<TextureObject>[mesh3d.triangles.Length / 3];
         neighbourtriangles = new int[mesh3d.triangles.Length / 3][];
         neighbourVerticles = new int[mesh3d.triangles.Length / 3][];
+        neighbourEdges = new Edge[mesh3d.triangles.Length / 3][];
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
@@ -120,6 +124,7 @@ public class PlanarMesh
         // list of triangles. Verticles should be accessed from mesh3d.vertices
         // with mapping from triVert array
         List<int> tri = new List<int>();
+        List<Edge> edges = new List<Edge>();
 
         // filling first triangle
         vert.Add(p.p1);
@@ -169,29 +174,98 @@ public class PlanarMesh
                 tri.Add(indexOfNP1);
                 tri.Add(indexOfNP2);
                 tri.Add(indexOfNP3);
+
+                // filling list of edges that need to be normalized
+                // index need to be less than 3 because indexes 0,1,2 are for mothet triangle
+                if (indexOfNP1 < 3)
+                {
+                    edges.Add(new Edge(indexOfNP2, indexOfNP1));
+                    edges.Add(new Edge(indexOfNP3, indexOfNP1));
+                }
+                if (indexOfNP2 < 3)
+                {
+                    edges.Add(new Edge(indexOfNP1, indexOfNP2));
+                    edges.Add(new Edge(indexOfNP3, indexOfNP2));
+                }
+                if (indexOfNP3 < 3)
+                {
+                    edges.Add(new Edge(indexOfNP1, indexOfNP3));
+                    edges.Add(new Edge(indexOfNP2, indexOfNP3));
+                }
             }
         }
         neighbourtriangles[current / 3] = tri.ToArray();
         neighbourVerticles[current / 3] = triVert.ToArray();
+        neighbourEdges[current / 3] = edges.ToArray();
         //Debug.Log("neighbour: " + (current / 3 + 1) + ", triangles " + (tri.Count / 3 - 1) + ", vert " + (vert.Count));
     }
 
     // mesh of triangle with his neighbours
-    private Mesh BuildLocalMesh(int i, Mesh mesh3d)
+    private Mesh BuildLocalMesh(int triangle, Mesh mesh3d)
     {
-        Mesh localMesh = new Mesh();
-        localMesh.triangles = neighbourtriangles[i / 3];
-        localMesh.vertices = new Vector3[neighbourVerticles.Length];
-        for (int j = 0; j < localMesh.vertices.Length; j++)
+        Vector3[] vertices = new Vector3[neighbourVerticles[triangle].Length];
+        for (int j = 0; j < vertices.Length; j++)
         {
-            localMesh.vertices[j] = mesh3d.vertices[neighbourVerticles[i / 3][j]];
+            vertices[j] = mesh3d.vertices[neighbourVerticles[triangle][j]];
+        }
+
+        Mesh localMesh = new Mesh();
+        localMesh.vertices = vertices;
+        localMesh.triangles = neighbourtriangles[triangle];
+        foreach (Edge edge in neighbourEdges[triangle])
+        {
+            edge.length = Math.Abs(Vector3.Distance(vertices[edge.from], vertices[edge.to]));
         }
 
         return localMesh;
     }
 
+    private void rotateAndFlattenMesh(Mesh mesh)
+    {
+        Vector3 cross = Vector3.Cross(mesh.vertices[1] - mesh.vertices[0], mesh.vertices[2] - mesh.vertices[0]);
+        Quaternion qAngle = Quaternion.LookRotation(cross);
+
+        //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
+
+        Vector3[] vertices = new Vector3[mesh.vertices.Length];
+        for (int i = 0; i < mesh.vertices.Length; i++)
+        {
+            vertices[i] = qAngle * mesh.vertices[i];
+            vertices[i].z = 0;
+        }
+        mesh.vertices = vertices;
+    }
+
+    private void normalizeFlatMesh(int triangle, Mesh mesh)
+    {
+        Vector3[] vertices = new Vector3[mesh.vertices.Length];
+        foreach (Edge edge in neighbourEdges[triangle])
+        {
+            Vector3 move = mesh.vertices[edge.to] - mesh.vertices[edge.from];
+            float currentLength = Math.Abs(move.magnitude);
+            float wantedLength;
+            if (currentLength == 0)
+            {
+                // vector to outside of triangle
+                move =
+                     -(mesh.vertices[0] - mesh.vertices[edge.from]
+                     + mesh.vertices[1] - mesh.vertices[edge.from]
+                     + mesh.vertices[2] - mesh.vertices[edge.from]);
+                currentLength = Math.Abs(move.magnitude);
+                wantedLength = edge.length;
+            }
+            else
+            {
+                wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH;
+            }
+            vertices[edge.to] = mesh.vertices[edge.from] + move * (wantedLength / currentLength);
+        }
+        mesh.vertices = vertices;
+    }
+
     public void updateMesh(Mesh mesh3d)
     {
+        Debug.Log("-------------------------------------");
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
 
@@ -206,9 +280,11 @@ public class PlanarMesh
                     mesh3d.vertices[mesh3d.triangles[i + 1]],
                     mesh3d.vertices[mesh3d.triangles[i + 2]]);
 
-                Mesh localMesh = BuildLocalMesh(i, mesh3d);
+                Mesh localMesh = BuildLocalMesh(i / 3, mesh3d);
+                rotateAndFlattenMesh(localMesh);
+                for (int j = 0; j < 5; j++)
+                    normalizeFlatMesh(i / 3, localMesh);
 
-                //todo - rzuc na plaszczyzne
                 //todo - normalizuj
                 //todo - interpoluj barycentryczne
                 //todo - przesun aby byla na srodku

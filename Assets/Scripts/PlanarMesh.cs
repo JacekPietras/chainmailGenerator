@@ -16,8 +16,6 @@ public class PlanarMesh
     private int[][] neighbourVerticles;
     private Edge[][] neighbourEdges;
 
-    private const float NORMALIZATION_STRENGTH = 0.5f;
-
     public PlanarMesh()
     {
         createCleaningMesh();
@@ -201,7 +199,7 @@ public class PlanarMesh
     }
 
     // mesh of triangle with his neighbours
-    private Mesh BuildLocalMesh(int triangle, Mesh mesh3d)
+    private MeshFlat BuildLocalMesh(int triangle, Mesh mesh3d)
     {
         Vector3[] vertices = new Vector3[neighbourVerticles[triangle].Length];
         for (int j = 0; j < vertices.Length; j++)
@@ -209,58 +207,13 @@ public class PlanarMesh
             vertices[j] = mesh3d.vertices[neighbourVerticles[triangle][j]];
         }
 
-        Mesh localMesh = new Mesh();
+        MeshFlat localMesh = new MeshFlat();
         localMesh.vertices = vertices;
         localMesh.triangles = neighbourtriangles[triangle];
-        foreach (Edge edge in neighbourEdges[triangle])
-        {
-            edge.length = Math.Abs(Vector3.Distance(vertices[edge.from], vertices[edge.to]));
-        }
+        localMesh.edges = neighbourEdges[triangle];
+        localMesh.fillEdgeLength();
 
         return localMesh;
-    }
-
-    private void rotateAndFlattenMesh(Mesh mesh)
-    {
-        Vector3 cross = Vector3.Cross(mesh.vertices[1] - mesh.vertices[0], mesh.vertices[2] - mesh.vertices[0]);
-        Quaternion qAngle = Quaternion.LookRotation(cross);
-
-        //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
-
-        Vector3[] vertices = new Vector3[mesh.vertices.Length];
-        for (int i = 0; i < mesh.vertices.Length; i++)
-        {
-            vertices[i] = qAngle * mesh.vertices[i];
-            vertices[i].z = 0;
-        }
-        mesh.vertices = vertices;
-    }
-
-    private void normalizeFlatMesh(int triangle, Mesh mesh)
-    {
-        Vector3[] vertices = new Vector3[mesh.vertices.Length];
-        foreach (Edge edge in neighbourEdges[triangle])
-        {
-            Vector3 move = mesh.vertices[edge.to] - mesh.vertices[edge.from];
-            float currentLength = Math.Abs(move.magnitude);
-            float wantedLength;
-            if (currentLength == 0)
-            {
-                // vector to outside of triangle
-                move =
-                     -(mesh.vertices[0] - mesh.vertices[edge.from]
-                     + mesh.vertices[1] - mesh.vertices[edge.from]
-                     + mesh.vertices[2] - mesh.vertices[edge.from]);
-                currentLength = Math.Abs(move.magnitude);
-                wantedLength = edge.length;
-            }
-            else
-            {
-                wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH;
-            }
-            vertices[edge.to] = mesh.vertices[edge.from] + move * (wantedLength / currentLength);
-        }
-        mesh.vertices = vertices;
     }
 
     public void updateMesh(Mesh mesh3d)
@@ -268,6 +221,7 @@ public class PlanarMesh
         Debug.Log("-------------------------------------");
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
+        Vector3 center = new Vector3(.5f, .5f, 0);
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
@@ -280,10 +234,9 @@ public class PlanarMesh
                     mesh3d.vertices[mesh3d.triangles[i + 1]],
                     mesh3d.vertices[mesh3d.triangles[i + 2]]);
 
-                Mesh localMesh = BuildLocalMesh(i / 3, mesh3d);
-                rotateAndFlattenMesh(localMesh);
-                for (int j = 0; j < 5; j++)
-                    normalizeFlatMesh(i / 3, localMesh);
+                MeshFlat localMesh = BuildLocalMesh(i / 3, mesh3d);
+                localMesh.rotateAndFlattenMesh();
+                localMesh.normalizeFlatMesh(5);
 
                 //todo - normalizuj
                 //todo - interpoluj barycentryczne
@@ -292,31 +245,51 @@ public class PlanarMesh
 
                 foreach (TextureObject obj in textureObjectsOnTriangles[i / 3])
                 {
-                    Vector3 interpolated3D = obj.barycentric.Interpolate(p);
+                    //TODO remove that sin rotation
+                    obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
 
-
-
-
-                    Triangle2D planarP = p.planar2();
-                    planarP.applyScale(1 / obj.scale);
                     // that's interpolated center of ring on planar 3d triangle
-                    Vector2 interpolated = obj.barycentric.Interpolate(planarP);
-                    // planarP.rotate(obj.rotation, interpolated);
-                    planarP.rotate(Mathf.Sin(Time.realtimeSinceStartup), interpolated);
+                    Vector3 interpolated = obj.barycentric.Interpolate(localMesh.vertices[0], localMesh.vertices[1], localMesh.vertices[2]);
+                    Vector3[] transformedVerticles = new Vector3[localMesh.vertices.Length];
+
+                    for (int k = 0; k < localMesh.vertices.Length; k++)
+                    {
+                        // moving to center of coords
+                        Vector3 transformed = localMesh.vertices[k] - interpolated;
+                        // scaling 
+                        transformed *= (1 / obj.scale);
+                        // rotation
+                        transformed = rotatePoint(transformed, obj.rotation);
+                        // setting center as center of bitmap
+                        transformed += center;
+
+                        transformedVerticles[k] = transformed;
+                    }
+
+                    for (int k = 0; k < localMesh.triangles.Length; k += 3)
+                    {
+                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 0]]);
+                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 1]]);
+                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 2]]);
+
+                        vertList.Add(gridVertices[i]);
+                        vertList.Add(gridVertices[i + 1]);
+                        vertList.Add(gridVertices[i + 2]);??nope
+                    }
+
+
 
                     //Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
                     //Debug.Log("Planar triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
                     //Debug.Log("Interpolated (" + interpolated.x + ", " + interpolated.y + ")");
+                    /*
+                                        uvList.Add(planarP.p1);
+                                        uvList.Add(planarP.p2);
+                                        uvList.Add(planarP.p3);
 
-                    planarP.applyTranslation(-interpolated.x + 0.5f, -interpolated.y + 0.5f);
-
-                    uvList.Add(planarP.p1);
-                    uvList.Add(planarP.p2);
-                    uvList.Add(planarP.p3);
-
-                    vertList.Add(gridVertices[i]);
-                    vertList.Add(gridVertices[i + 1]);
-                    vertList.Add(gridVertices[i + 2]);
+                                        vertList.Add(gridVertices[i]);
+                                        vertList.Add(gridVertices[i + 1]);
+                                        vertList.Add(gridVertices[i + 2]);*/
 
                     //Debug.Log("UV triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
                     //Debug.Log("UV triangle (" + gridVertices[i].x + ", " + gridVertices[i].y + ", " + gridVertices[i].y + ") (" + gridVertices[i + 1].x + ", " + gridVertices[i + 1].y + ", " + gridVertices[i+1].y + ") (" + gridVertices[i + 2].x + ", " + gridVertices[i + 2].y + ", " + gridVertices[i+2].y + ")");
@@ -327,6 +300,30 @@ public class PlanarMesh
         mesh.vertices = vertList.ToArray();
         mesh.uv = uvList.ToArray();
         fillMeshTriangles();
+    }
+
+    private Vector3 rotatePoint(Vector3 pointToRotate, Vector3 centerPoint, float angleInDegrees)
+    {
+        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
+        float cosTheta = Mathf.Cos(angleInRadians);
+        float sinTheta = Mathf.Sin(angleInRadians);
+        return new Vector3(
+                (cosTheta * (pointToRotate.x - centerPoint.x) - sinTheta * (pointToRotate.y - centerPoint.y) + centerPoint.x),
+                (sinTheta * (pointToRotate.x - centerPoint.x) + cosTheta * (pointToRotate.y - centerPoint.y) + centerPoint.y),
+                pointToRotate.z
+        );
+    }
+
+    private Vector3 rotatePoint(Vector3 pointToRotate, float angleInDegrees)
+    {
+        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
+        float cosTheta = Mathf.Cos(angleInRadians);
+        float sinTheta = Mathf.Sin(angleInRadians);
+        return new Vector3(
+                (cosTheta * (pointToRotate.x) - sinTheta * (pointToRotate.y)),
+                (sinTheta * (pointToRotate.x) + cosTheta * (pointToRotate.y)),
+                pointToRotate.z
+        );
     }
 
     public void fillMeshTriangles()

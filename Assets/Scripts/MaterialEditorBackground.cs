@@ -44,11 +44,11 @@ public class MaterialEditorBackground : MaterialEditorAbstract
             System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
     }
 
-    public override void updateDistortedMap()
+    public override void updateDistortedMap(PlanarMesh planarMesh = null)
     {
         if (lowerLayer != null)
         {
-            lowerLayer.updateDistortedMap();
+            lowerLayer.updateDistortedMap(planarMesh);
             if (colorMap != null)
             {
                 if (lowerLayer.getColorMap() != null)

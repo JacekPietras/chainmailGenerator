@@ -27,7 +27,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour
         {
             updateDistortedMap();
         }
-        Debug.Log("update of planar mesh");
+        //Debug.Log("update of planar mesh");
     }
 
     public virtual void init() { }
@@ -92,5 +92,5 @@ public abstract class MaterialEditorAbstract : MonoBehaviour
         else { return 0; }
     }
 
-    public virtual void updateDistortedMap() { if (lowerLayer != null) { lowerLayer.updateDistortedMap(); } }
+    public virtual void updateDistortedMap(PlanarMesh planarMesh = null) { if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); } }
 }

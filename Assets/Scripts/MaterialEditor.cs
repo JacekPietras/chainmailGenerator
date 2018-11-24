@@ -67,12 +67,16 @@ public class MaterialEditor : MaterialEditorAbstract
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
     }
 
-    public override void updateDistortedMap()
+    public override void updateDistortedMap(PlanarMesh planarMesh = null)
     {
-        if (lowerLayer != null) { lowerLayer.updateDistortedMap(); }
+        if (planarMesh == null)
+        {
+            // prevents calculating mesh update in every layer
+            planarMesh = this.planarMesh;
+            planarMesh.updateMesh(mesh3d);
+        }
+        if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); }
         int passShift = getUsedPassesCount() - 3;
-
-        planarMesh.updateMesh(mesh3d);
 
         if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null)
         {

@@ -66,6 +66,13 @@ public class Triangle3D
 
     public bool isNeighbour(Triangle3D p)
     {
-        return (p1 == p.p1 || p1 == p.p2 || p1 == p.p3 || p2 == p.p1 || p2 == p.p2 || p2 == p.p3 || p3 == p.p1 || p3 == p.p2 || p3 == p.p3) ;
+        return (p1 == p.p1 || p1 == p.p2 || p1 == p.p3 || p2 == p.p1 || p2 == p.p2 || p2 == p.p3 || p3 == p.p1 || p3 == p.p2 || p3 == p.p3);
+    }
+
+    public void print(string prefix = "triangle")
+    {
+        if (p1.z != 0 || p2.z != 0 || p3.z != 0)
+            Debug.Log(prefix + " Z axis not zero !!!!!!!!!!!!");
+        Debug.Log(prefix + " (" + p1.x + ", " + p1.y + ") (" + p2.x + ", " + p2.y + ") (" + p3.x + ", " + p3.y + ")");
     }
 }

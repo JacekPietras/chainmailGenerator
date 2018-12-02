@@ -11,10 +11,9 @@ public class PlanarMesh
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<TextureObject>[] textureObjectsOnTriangles;
+    // for every point from mesh3d.triangles assigns 
     private Vector3[] gridVertices;
-    private int[][] neighbourtriangles;
-    private int[][] neighbourVerticles;
-    private Edge[][] neighbourEdges;
+    private Neighbour[] neighbours;
 
     public PlanarMesh()
     {
@@ -66,9 +65,7 @@ public class PlanarMesh
 
         gridVertices = new Vector3[mesh3d.triangles.Length];
         textureObjectsOnTriangles = new List<TextureObject>[mesh3d.triangles.Length / 3];
-        neighbourtriangles = new int[mesh3d.triangles.Length / 3][];
-        neighbourVerticles = new int[mesh3d.triangles.Length / 3][];
-        neighbourEdges = new Edge[mesh3d.triangles.Length / 3][];
+        neighbours = new Neighbour[mesh3d.triangles.Length / 3];
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
@@ -78,17 +75,14 @@ public class PlanarMesh
             Vector2 u2 = mesh3d.uv[mesh3d.triangles[i + 1]];
             Vector2 u3 = mesh3d.uv[mesh3d.triangles[i + 2]];
 
-            Triangle3D p = new Triangle3D(
-                mesh3d.vertices[mesh3d.triangles[i + 0]],
-                mesh3d.vertices[mesh3d.triangles[i + 1]],
-                mesh3d.vertices[mesh3d.triangles[i + 2]]);
-
-
             // verticles of new mesh will be created from UV points of 3D object
             // we need to normalize Y value because it's for texture
-            gridVertices[i] = new Vector3(u1.x, 1 - u1.y);
+            gridVertices[i + 0] = new Vector3(u1.x, 1 - u1.y);
             gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
             gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
+
+            //Triangle3D vvv = new Triangle3D(u1, u2, u3);
+            //vvv.print("index " + i / 3);
 
             foreach (TextureObject obj in objects)
             {
@@ -96,44 +90,47 @@ public class PlanarMesh
                 if (a.IsInside)
                 {
                     if (textureObjectsOnTriangles[i / 3] == null)
-                    {
                         textureObjectsOnTriangles[i / 3] = new List<TextureObject>();
-                    }
                     textureObjectsOnTriangles[i / 3].Add(obj.copyWithBarycentric(a));
 
-                    if (neighbourtriangles[i / 3] == null)
-                    {
-                        // Debug.Log("looking for neighbours");
-                        fillNeighbours(p, mesh3d, i);
-                    }
+                    if (neighbours[i / 3] == null) fillNeighbours(mesh3d, i);
                 }
             }
         }
     }
 
-    private void fillNeighbours(Triangle3D p, Mesh mesh3d, int current)
+    private void fillNeighbours(Mesh mesh3d, int current)
     {
         // list of unique verts around neighbours, values there can change after update
         // we need to recreatethat list using triVert array
-        List<Vector3> vert = new List<Vector3>();
+        List<Vector3> unique = new List<Vector3>();
         // list of shortcuts to verticles from 3D mesh, that only indexes so it shouldn't change
         // we cannot use just verticle list because they are doubled on edges because of uv and normals
-        List<int> triVert = new List<int>();
+        List<int> verticles = new List<int>();
         // list of triangles. Verticles should be accessed from mesh3d.vertices
         // with mapping from triVert array
-        List<int> tri = new List<int>();
+        List<int> triangles = new List<int>();
         List<Edge> edges = new List<Edge>();
+        List<int> index = new List<int>();
 
         // filling first triangle
-        vert.Add(p.p1);
-        vert.Add(p.p2);
-        vert.Add(p.p3);
-        triVert.Add(mesh3d.triangles[current + 0]);
-        triVert.Add(mesh3d.triangles[current + 1]);
-        triVert.Add(mesh3d.triangles[current + 2]);
-        tri.Add(0);
-        tri.Add(1);
-        tri.Add(2);
+        // current 3D triangle
+        Triangle3D p = new Triangle3D(
+            mesh3d.vertices[mesh3d.triangles[current + 0]],
+            mesh3d.vertices[mesh3d.triangles[current + 1]],
+            mesh3d.vertices[mesh3d.triangles[current + 2]]);
+        unique.Add(p.p1);
+        unique.Add(p.p2);
+        unique.Add(p.p3);
+        verticles.Add(mesh3d.triangles[current + 0]);
+        verticles.Add(mesh3d.triangles[current + 1]);
+        verticles.Add(mesh3d.triangles[current + 2]);
+        triangles.Add(0);
+        triangles.Add(1);
+        triangles.Add(2);
+        index.Add(current + 0);
+        index.Add(current + 1);
+        index.Add(current + 2);
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
@@ -147,31 +144,34 @@ public class PlanarMesh
 
             if (n.isNeighbour(p))
             {
-                int indexOfNP1 = vert.IndexOf(n.p1);
-                int indexOfNP2 = vert.IndexOf(n.p2);
-                int indexOfNP3 = vert.IndexOf(n.p3);
+                int indexOfNP1 = unique.IndexOf(n.p1);
+                int indexOfNP2 = unique.IndexOf(n.p2);
+                int indexOfNP3 = unique.IndexOf(n.p3);
 
                 if (indexOfNP1 == -1)
                 {
-                    vert.Add(n.p1);
-                    triVert.Add(mesh3d.triangles[i + 0]);
-                    indexOfNP1 = vert.Count - 1;
+                    unique.Add(n.p1);
+                    verticles.Add(mesh3d.triangles[i + 0]);
+                    indexOfNP1 = unique.Count - 1;
                 }
                 if (indexOfNP2 == -1)
                 {
-                    vert.Add(n.p2);
-                    triVert.Add(mesh3d.triangles[i + 1]);
-                    indexOfNP2 = vert.Count - 1;
+                    unique.Add(n.p2);
+                    verticles.Add(mesh3d.triangles[i + 1]);
+                    indexOfNP2 = unique.Count - 1;
                 }
                 if (indexOfNP3 == -1)
                 {
-                    vert.Add(n.p3);
-                    triVert.Add(mesh3d.triangles[i + 2]);
-                    indexOfNP3 = vert.Count - 1;
+                    unique.Add(n.p3);
+                    verticles.Add(mesh3d.triangles[i + 2]);
+                    indexOfNP3 = unique.Count - 1;
                 }
-                tri.Add(indexOfNP1);
-                tri.Add(indexOfNP2);
-                tri.Add(indexOfNP3);
+                triangles.Add(indexOfNP1);
+                triangles.Add(indexOfNP2);
+                triangles.Add(indexOfNP3);
+                index.Add(i + 0);
+                index.Add(i + 1);
+                index.Add(i + 2);
 
                 // filling list of edges that need to be normalized
                 // index need to be less than 3 because indexes 0,1,2 are for mothet triangle
@@ -192,26 +192,28 @@ public class PlanarMesh
                 }
             }
         }
-        neighbourtriangles[current / 3] = tri.ToArray();
-        neighbourVerticles[current / 3] = triVert.ToArray();
-        neighbourEdges[current / 3] = edges.ToArray();
-        //Debug.Log("neighbour: " + (current / 3 + 1) + ", triangles " + (tri.Count / 3 - 1) + ", vert " + (vert.Count));
+
+        neighbours[current / 3] = new Neighbour(index, triangles, verticles, edges);
+        // Debug.Log("neighbour: " + (current / 3 + 1) + ", triangles " + (tri.Count / 3 - 1) + ", vert " + (vert.Count));
     }
 
     // mesh of triangle with his neighbours
-    private MeshFlat BuildLocalMesh(int triangle, Mesh mesh3d)
+    private MeshFlat BuildLocalMesh(Mesh mesh3d, Neighbour neighbour)
     {
-        Vector3[] vertices = new Vector3[neighbourVerticles[triangle].Length];
+        Vector3[] vertices = new Vector3[neighbour.verticles.Length];
         for (int j = 0; j < vertices.Length; j++)
         {
-            vertices[j] = mesh3d.vertices[neighbourVerticles[triangle][j]];
+            vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
         }
 
         MeshFlat localMesh = new MeshFlat();
         localMesh.vertices = vertices;
-        localMesh.triangles = neighbourtriangles[triangle];
-        localMesh.edges = neighbourEdges[triangle];
+        localMesh.triangles = neighbour.triangles;
+        localMesh.edges = neighbour.edges;
         localMesh.fillEdgeLength();
+
+        localMesh.rotateAndFlattenMesh();
+        //localMesh.normalizeFlatMesh(5);
 
         return localMesh;
     }
@@ -221,78 +223,48 @@ public class PlanarMesh
         Debug.Log("-------------------------------------");
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
-        Vector3 center = new Vector3(.5f, .5f, 0);
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3)
         {
             if (textureObjectsOnTriangles[i / 3] != null)
             {
-                // 3D triangle from 3D model
-                Triangle3D p = new Triangle3D(
-                    mesh3d.vertices[mesh3d.triangles[i + 0]],
-                    mesh3d.vertices[mesh3d.triangles[i + 1]],
-                    mesh3d.vertices[mesh3d.triangles[i + 2]]);
-
-                MeshFlat localMesh = BuildLocalMesh(i / 3, mesh3d);
-                localMesh.rotateAndFlattenMesh();
-                localMesh.normalizeFlatMesh(5);
-
-                //todo - normalizuj
-                //todo - interpoluj barycentryczne
-                //todo - przesun aby byla na srodku
-                //todo - dodaj do listy renderowania
+                Neighbour neighbour = neighbours[i / 3];
+                MeshFlat localMesh = BuildLocalMesh(mesh3d, neighbour);
 
                 foreach (TextureObject obj in textureObjectsOnTriangles[i / 3])
                 {
                     //TODO remove that sin rotation
                     obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
 
-                    // that's interpolated center of ring on planar 3d triangle
-                    Vector3 interpolated = obj.barycentric.Interpolate(localMesh.vertices[0], localMesh.vertices[1], localMesh.vertices[2]);
-                    Vector3[] transformedVerticles = new Vector3[localMesh.vertices.Length];
+                    Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
 
-                    for (int k = 0; k < localMesh.vertices.Length; k++)
+                    for (int k = 0; k < localMesh.triangles.Length; k += 3)
                     {
-                        // moving to center of coords
-                        Vector3 transformed = localMesh.vertices[k] - interpolated;
-                        // scaling 
-                        transformed *= (1 / obj.scale);
-                        // rotation
-                        transformed = rotatePoint(transformed, obj.rotation);
-                        // setting center as center of bitmap
-                        transformed += center;
+                      //  Debug.Log(neighbour.index[k + 0] + " " + k);
+                       // if (k > 0) break;
+                        Triangle3D uuu = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
+                                                        transformedVerticles[localMesh.triangles[k + 1]],
+                                                        transformedVerticles[localMesh.triangles[k + 2]]);
 
-                        transformedVerticles[k] = transformed;
+                        Triangle3D vvv = new Triangle3D(gridVertices[neighbour.index[k + 0]],
+                                                        gridVertices[neighbour.index[k + 1]],
+                                                        gridVertices[neighbour.index[k + 2]]);
+                        //  uuu.print("on ring");
+                      //  vvv.print("on cube");
                     }
 
                     for (int k = 0; k < localMesh.triangles.Length; k += 3)
                     {
-                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 0]]);
-                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 1]]);
-                        uvList.Add(localMesh.vertices[localMesh.triangles[k + 2]]);
+                       // if (k > 0) break;
+                        uvList.Add(transformedVerticles[localMesh.triangles[k + 0]]);
+                        uvList.Add(transformedVerticles[localMesh.triangles[k + 1]]);
+                        uvList.Add(transformedVerticles[localMesh.triangles[k + 2]]);
 
-                        vertList.Add(gridVertices[i]);
-                        vertList.Add(gridVertices[i + 1]);
-                        vertList.Add(gridVertices[i + 2]);??nope
+                        vertList.Add(gridVertices[neighbour.index[k + 0]]);
+                        vertList.Add(gridVertices[neighbour.index[k + 1]]);
+                        vertList.Add(gridVertices[neighbour.index[k + 2]]);
                     }
-
-
-
-                    //Debug.Log("triangle (" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
-                    //Debug.Log("Planar triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
-                    //Debug.Log("Interpolated (" + interpolated.x + ", " + interpolated.y + ")");
-                    /*
-                                        uvList.Add(planarP.p1);
-                                        uvList.Add(planarP.p2);
-                                        uvList.Add(planarP.p3);
-
-                                        vertList.Add(gridVertices[i]);
-                                        vertList.Add(gridVertices[i + 1]);
-                                        vertList.Add(gridVertices[i + 2]);*/
-
-                    //Debug.Log("UV triangle (" + planarP.p1.x + ", " + planarP.p1.y + ") (" + planarP.p2.x + ", " + planarP.p2.y + ") (" + planarP.p3.x + ", " + planarP.p3.y + ")");
-                    //Debug.Log("UV triangle (" + gridVertices[i].x + ", " + gridVertices[i].y + ", " + gridVertices[i].y + ") (" + gridVertices[i + 1].x + ", " + gridVertices[i + 1].y + ", " + gridVertices[i+1].y + ") (" + gridVertices[i + 2].x + ", " + gridVertices[i + 2].y + ", " + gridVertices[i+2].y + ")");
                 }
             }
         }
@@ -300,30 +272,6 @@ public class PlanarMesh
         mesh.vertices = vertList.ToArray();
         mesh.uv = uvList.ToArray();
         fillMeshTriangles();
-    }
-
-    private Vector3 rotatePoint(Vector3 pointToRotate, Vector3 centerPoint, float angleInDegrees)
-    {
-        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
-        float cosTheta = Mathf.Cos(angleInRadians);
-        float sinTheta = Mathf.Sin(angleInRadians);
-        return new Vector3(
-                (cosTheta * (pointToRotate.x - centerPoint.x) - sinTheta * (pointToRotate.y - centerPoint.y) + centerPoint.x),
-                (sinTheta * (pointToRotate.x - centerPoint.x) + cosTheta * (pointToRotate.y - centerPoint.y) + centerPoint.y),
-                pointToRotate.z
-        );
-    }
-
-    private Vector3 rotatePoint(Vector3 pointToRotate, float angleInDegrees)
-    {
-        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
-        float cosTheta = Mathf.Cos(angleInRadians);
-        float sinTheta = Mathf.Sin(angleInRadians);
-        return new Vector3(
-                (cosTheta * (pointToRotate.x) - sinTheta * (pointToRotate.y)),
-                (sinTheta * (pointToRotate.x) + cosTheta * (pointToRotate.y)),
-                pointToRotate.z
-        );
     }
 
     public void fillMeshTriangles()
@@ -440,6 +388,8 @@ public class PlanarMesh
         if (backgroundT == null) { setMaterialByColor(backgroundC); }
         else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
+        setMaterialByColor(new Color(1, 0, 0, 1));
+        Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();
@@ -462,62 +412,5 @@ public class PlanarMesh
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(renderTexture);
         output.Apply();
-    }
-
-    public void WeldVertices(Mesh aMesh, float aMaxDelta = 0.001f)
-    {
-        var verts = aMesh.vertices;
-        var normals = aMesh.normals;
-        var uvs = aMesh.uv;
-        List<int> newVerts = new List<int>();
-        int[] map = new int[verts.Length];
-        // create mapping and filter duplicates.
-        for (int i = 0; i < verts.Length; i++)
-        {
-            var p = verts[i];
-            var n = normals[i];
-            var uv = uvs[i];
-            bool duplicate = false;
-            for (int i2 = 0; i2 < newVerts.Count; i2++)
-            {
-                int a = newVerts[i2];
-                if (
-                    (verts[a] - p).sqrMagnitude <= aMaxDelta && // compare position
-                    Vector3.Angle(normals[a], n) <= aMaxDelta && // compare normal
-                    (uvs[a] - uv).sqrMagnitude <= aMaxDelta // compare first uv coordinate
-                    )
-                {
-                    map[i] = i2;
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate)
-            {
-                map[i] = newVerts.Count;
-                newVerts.Add(i);
-            }
-        }
-        // create new vertices
-        var verts2 = new Vector3[newVerts.Count];
-        var normals2 = new Vector3[newVerts.Count];
-        var uvs2 = new Vector2[newVerts.Count];
-        for (int i = 0; i < newVerts.Count; i++)
-        {
-            int a = newVerts[i];
-            verts2[i] = verts[a];
-            normals2[i] = normals[a];
-            uvs2[i] = uvs[a];
-        }
-        // map the triangle to the new vertices
-        var tris = aMesh.triangles;
-        for (int i = 0; i < tris.Length; i++)
-        {
-            tris[i] = map[tris[i]];
-        }
-        aMesh.vertices = verts2;
-        aMesh.normals = normals2;
-        aMesh.uv = uvs2;
-        aMesh.triangles = tris;
     }
 }

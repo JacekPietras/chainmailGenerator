@@ -5,6 +5,7 @@ using UnityEngine;
 public class MeshFlat
 {
     private const float NORMALIZATION_STRENGTH = 0.5f;
+    private Vector3 CENTER = new Vector3(.5f, .5f, 0);
 
     public Vector3[] vertices;
     public int[] triangles;
@@ -69,5 +70,52 @@ public class MeshFlat
         {
             vertices[i] -= center;
         }
+    }
+
+    public Vector3[] getTransformedByObject(TextureObject obj)
+    {
+        // that's interpolated center of ring on planar 3d triangle
+        Vector3 interpolated = obj.barycentric.Interpolate(vertices[0], vertices[1], vertices[2]);
+        Vector3[] transformedVerticles = new Vector3[vertices.Length];
+        
+        for (int k = 0; k < vertices.Length; k++)
+        {
+            // moving to center of coords
+            Vector3 transformed = vertices[k] - interpolated;
+            // scaling 
+            transformed *= (1 / obj.scale);
+            // rotation
+            transformed = rotatePoint(transformed, obj.rotation);
+            // setting center as center of bitmap
+            transformed += CENTER;
+
+            transformedVerticles[k] = transformed;
+        }
+
+        return transformedVerticles;
+    }
+
+    private Vector3 rotatePoint(Vector3 pointToRotate, Vector3 centerPoint, float angleInDegrees)
+    {
+        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
+        float cosTheta = Mathf.Cos(angleInRadians);
+        float sinTheta = Mathf.Sin(angleInRadians);
+        return new Vector3(
+                (cosTheta * (pointToRotate.x - centerPoint.x) - sinTheta * (pointToRotate.y - centerPoint.y) + centerPoint.x),
+                (sinTheta * (pointToRotate.x - centerPoint.x) + cosTheta * (pointToRotate.y - centerPoint.y) + centerPoint.y),
+                pointToRotate.z
+        );
+    }
+
+    private Vector3 rotatePoint(Vector3 pointToRotate, float angleInDegrees)
+    {
+        float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
+        float cosTheta = Mathf.Cos(angleInRadians);
+        float sinTheta = Mathf.Sin(angleInRadians);
+        return new Vector3(
+                (cosTheta * (pointToRotate.x) - sinTheta * (pointToRotate.y)),
+                (sinTheta * (pointToRotate.x) + cosTheta * (pointToRotate.y)),
+                pointToRotate.z
+        );
     }
 }

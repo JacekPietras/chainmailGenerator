@@ -70,8 +70,69 @@ public class Triangle3D {
         Debug.Log(prefix + " (" + p1.x + ", " + p1.y + ") (" + p2.x + ", " + p2.y + ") (" + p3.x + ", " + p3.y + ")");
     }
 
-    public bool isOnTexture() {
+    public bool isOnTexture2() {
         return isOnTexture(p1) || isOnTexture(p2) || isOnTexture(p3) || pointInside(0, 0) || pointInside(0, 1) || pointInside(1, 0) || pointInside(1, 1);
+    }
+
+    // some lines have intersection, or at least one point from triangle is in rect, or at least one point of rect is in triangle
+    public bool isOnTexture() {
+        Vector2 a = new Vector2(0,0);
+        Vector2 b = new Vector2(0,1);
+        Vector2 c = new Vector2(1,0);
+        Vector2 d = new Vector2(1,1);
+
+        return isOnTexture(p1) || pointInside(0, 0) 
+            || intersection(p1,p2, a,b)
+            || intersection(p1, p2, a, c)
+            || intersection(p1, p2, b, d)
+            || intersection(p1, p2, c, d)
+
+            || intersection(p1, p3, a, b)
+            || intersection(p1, p3, a, c)
+            || intersection(p1, p3, b, d)
+            || intersection(p1, p3, c, d)
+
+            || intersection(p2, p3, a, b)
+            || intersection(p2, p3, a, c)
+            || intersection(p2, p3, b, d)
+            || intersection(p2, p3, c, d)
+            ;
+    }
+
+    private bool intersection2(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4) {
+        return intersection(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+    }
+
+    static bool intersection(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2) {
+        Vector2 b = a2 - a1;
+        Vector2 d = b2 - b1;
+        float bDotDPerp = b.x * d.y - b.y * d.x;
+
+        // if b dot d == 0, it means the lines are parallel so have infinite intersection points
+        if (bDotDPerp == 0)
+            return false;
+
+        Vector2 c = b1 - a1;
+        float t = (c.x * d.y - c.y * d.x) / bDotDPerp;
+        if (t < 0 || t > 1)
+            return false;
+
+        float u = (c.x * b.y - c.y * b.x) / bDotDPerp;
+        if (u < 0 || u > 1)
+            return false;
+
+        return true;
+    }
+
+    private bool intersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+        float x12 = x1 - x2;
+        float x34 = x3 - x4;
+        float y12 = y1 - y2;
+        float y34 = y3 - y4;
+
+        float c = x12 * y34 - y12 * x34;
+
+        return Mathf.Abs(c) >= 0.01;
     }
 
     private bool isOnTexture(Vector3 p) {

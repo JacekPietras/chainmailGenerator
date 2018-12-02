@@ -11,6 +11,8 @@ public class MeshFlat {
     public float[] strength;
     public Edge[] edges;
 
+    private Triangle2D motherTriangle;
+
     public void rotateAndFlattenMesh() {
         Vector3[] cross = new Vector3[triangles.Length / 3];
         strength = new float[triangles.Length / 3];
@@ -27,28 +29,31 @@ public class MeshFlat {
             vertices[i] = qAngle * vertices[i];
             vertices[i].z = 0;
         }
+
+        motherTriangle = new Triangle2D(vertices[triangles[0]], vertices[triangles[1]], vertices[triangles[2]]);
     }
 
     public void normalizeFlatMesh(int times) {
         while (times > 0 && separateOverLappingVerticles()) {
             times--;
         }
-        for (int i = 0; i < times; i++)
+        for (int i = 0; i < times; i++) {
+            separateOverLappingFaces();
             normalizeFlatMesh();
+        }
     }
 
     public bool separateOverLappingVerticles() {
         bool separated = false;
         foreach (Edge edge in edges) {
             Vector3 move = vertices[edge.to] - vertices[edge.from];
-            float currentLength = Mathf.Abs(move.magnitude);
-            if (currentLength == 0) {
+            if (move.magnitude == 0) {
                 // vector to outside of triangle
                 move =
                      -(vertices[0] - vertices[edge.from]
                      + vertices[1] - vertices[edge.from]
                      + vertices[2] - vertices[edge.from]);
-                currentLength = Mathf.Abs(move.magnitude);
+                float currentLength = Mathf.Abs(move.magnitude);
                 float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
                 vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
                 separated = true;
@@ -56,6 +61,21 @@ public class MeshFlat {
         }
 
         return separated;
+    }
+
+    public void separateOverLappingFaces() {
+        foreach (Edge edge in edges) {
+            if (motherTriangle.pointInside(vertices[edge.to])) {
+                // vector to outside of triangle
+                Vector3 move =
+                     -(vertices[0] - vertices[edge.from]
+                     + vertices[1] - vertices[edge.from]
+                     + vertices[2] - vertices[edge.from]);
+                float currentLength = Mathf.Abs(move.magnitude);
+                float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
+                vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+            }
+        }
     }
 
     public void normalizeFlatMesh() {

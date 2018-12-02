@@ -72,17 +72,17 @@ public class MaterialEditor : MaterialEditorAbstract {
         System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
         System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 
-        String normalizationParh = outputPath + "Normalization/";
-        if (Directory.Exists(normalizationParh)) {
-            Directory.Delete(normalizationParh, true);
+        String normalizationPath = outputPath + "Normalization/";
+        if (Directory.Exists(normalizationPath)) {
+            Directory.Delete(normalizationPath, true);
         }
         if (showingNormalization) {
-            Directory.CreateDirectory(normalizationParh);
+            Directory.CreateDirectory(normalizationPath);
             int i = 0;
             foreach (Texture2D tex in planarMesh.texList) {
                 if (tex == null) continue;
                 try {
-                    System.IO.File.WriteAllBytes("Assets/Normalization/" + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
+                    System.IO.File.WriteAllBytes(normalizationPath + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
                 } catch (IOException ignored) {
 
                 }

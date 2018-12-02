@@ -336,6 +336,7 @@ public class PlanarMesh {
             // all normals will be fixed
             normals[i] = Vector3.forward;
         }
+        mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.normals = normals;

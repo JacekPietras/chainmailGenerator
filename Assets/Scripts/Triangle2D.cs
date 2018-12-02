@@ -19,7 +19,7 @@ public class Triangle2D
     {
         return pointInside(s, p1, p2, p3);
     }
-
+    
     public static bool pointInside(Vector2 s, Triangle2D triangle2d)
     {
         return pointInside(s, triangle2d.p1, triangle2d.p2, triangle2d.p3);

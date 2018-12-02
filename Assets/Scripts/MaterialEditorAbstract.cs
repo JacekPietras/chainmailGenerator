@@ -8,7 +8,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
 
     protected MaterialEditorAbstract higherLayer;
     protected MaterialEditorAbstract lowerLayer;
-    private int runCount = 20;
+    private int runCount = -1;
 
     void Start() {
         fillLayers();

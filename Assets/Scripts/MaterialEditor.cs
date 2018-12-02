@@ -19,6 +19,7 @@ public class MaterialEditor : MaterialEditorAbstract {
     public Vector3 stampRotation = new Vector3(-90, 0, 0);
     public int normalizationSteps = 10;
     public float normalizationStrength = 0.5f;
+    public bool showingNormalization = false;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -54,7 +55,7 @@ public class MaterialEditor : MaterialEditorAbstract {
         distortedNormalMap = new Texture2D(textureResolution, textureResolution);
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
-        planarMesh = new PlanarMesh(mesh3d, objectMap, normalizationSteps, normalizationStrength);
+        planarMesh = new PlanarMesh(mesh3d, objectMap, normalizationSteps, normalizationStrength, showingNormalization);
     }
 
     void OnDestroy() {
@@ -67,13 +68,21 @@ public class MaterialEditor : MaterialEditorAbstract {
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 
         String path = "Assets/Normalization/";
-        if (Directory.Exists(path)) { Directory.Delete(path, true); }
-        Directory.CreateDirectory(path);
-        int i = 0;
-        foreach (Texture2D tex in planarMesh.texList) {
-            if (tex == null) continue;
-            System.IO.File.WriteAllBytes("Assets/Normalization/" + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
-            i++;
+        if (Directory.Exists(path)) {
+            Directory.Delete(path, true);
+        }
+        if (showingNormalization) {
+            Directory.CreateDirectory(path);
+            int i = 0;
+            foreach (Texture2D tex in planarMesh.texList) {
+                if (tex == null) continue;
+                try {
+                    System.IO.File.WriteAllBytes("Assets/Normalization/" + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
+                } catch (IOException ignored) {
+
+                }
+                i++;
+            }
         }
     }
 

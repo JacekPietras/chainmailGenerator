@@ -327,8 +327,9 @@ MonoBehaviour:
   objectMap: {fileID: 2800000, guid: 0966668920990524c93bf9b7a0b733ce, type: 3}
   heightShift: 0
   stampRotation: {x: -90, y: 0, z: 0}
-  normalizationSteps: 10
-  normalizationStrength: 0.4
+  normalizationSteps: 15
+  normalizationStrength: 0.7
+  showingNormalization: 0
 --- !u!4 &915320576
 Transform:
   m_ObjectHideFlags: 0

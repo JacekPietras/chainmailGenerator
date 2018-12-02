@@ -8,7 +8,7 @@ public class PlanarMesh {
     private Mesh mesh;
     private Mesh cleaningMesh;
     private int normalizationStepMax = 10;
-    private const Boolean showingNormalization = true;
+    private bool showingNormalization = false;
     public Texture2D[] texList;
     private int normalizationStep = 0;
     private float normalizationStrength = 0.5f;
@@ -24,11 +24,12 @@ public class PlanarMesh {
         createCleaningMesh();
     }
 
-    public PlanarMesh(Mesh mesh3d, Texture2D objectMap, int normalizationSteps, float normalizationStrength) {
+    public PlanarMesh(Mesh mesh3d, Texture2D objectMap, int normalizationSteps, float normalizationStrength, bool showingNormalization) {
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
         this.normalizationStepMax = normalizationSteps;
         this.normalizationStrength = normalizationStrength;
+        this.showingNormalization = showingNormalization;
         texList = new Texture2D[normalizationStepMax + 1];
     }
 

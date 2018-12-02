@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
-public class MaterialEditor : MaterialEditorAbstract
-{
+public class MaterialEditor : MaterialEditorAbstract {
     // resolution of raytraced maps
     public int itemResolution = 512;
     // resolution of final texture for object
@@ -17,6 +17,8 @@ public class MaterialEditor : MaterialEditorAbstract
     // additional height for layer to shift elements that are on other ones
     public bool heightShift = false;
     public Vector3 stampRotation = new Vector3(-90, 0, 0);
+    public int normalizationSteps = 10;
+    public float normalizationStrength = 0.5f;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -36,8 +38,7 @@ public class MaterialEditor : MaterialEditorAbstract
 
     public override Texture2D getNormalMap() { return distortedNormalMap; }
 
-    public override void init()
-    {
+    public override void init() {
         mesh3d = GetComponent<MeshFilter>().mesh;
 
         // generates raytraced maps from 3D object
@@ -53,11 +54,10 @@ public class MaterialEditor : MaterialEditorAbstract
         distortedNormalMap = new Texture2D(textureResolution, textureResolution);
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
-        planarMesh = new PlanarMesh(mesh3d, objectMap);
+        planarMesh = new PlanarMesh(mesh3d, objectMap, normalizationSteps, normalizationStrength);
     }
 
-    void OnDestroy()
-    {
+    void OnDestroy() {
         // map is also saved in asset files so we can use it in other places
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
@@ -65,12 +65,19 @@ public class MaterialEditor : MaterialEditorAbstract
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
         System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
+
+        String path = "Assets/Normalization/";
+        if (Directory.Exists(path)) { Directory.Delete(path, true); }
+        Directory.CreateDirectory(path);
+        int i = 0;
+        foreach (Texture2D tex in planarMesh.texList) {
+            System.IO.File.WriteAllBytes("Assets/Normalization/" + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
+            i++;
+        }
     }
 
-    public override void updateDistortedMap(PlanarMesh planarMesh = null)
-    {
-        if (planarMesh == null)
-        {
+    public override void updateDistortedMap(PlanarMesh planarMesh = null) {
+        if (planarMesh == null) {
             // prevents calculating mesh update in every layer
             planarMesh = this.planarMesh;
             planarMesh.updateMesh(mesh3d);
@@ -78,21 +85,16 @@ public class MaterialEditor : MaterialEditorAbstract
         if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); }
         int passShift = getUsedPassesCount() - 3;
 
-        if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null)
-        {
+        if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null) {
             planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0, passShift);
             planarMesh.renderDistortedMap(normalMap, distortedNormalMap, lowerLayer.getNormalMap(), 1, passShift);
-        }
-        else
-        {
+        } else {
             planarMesh.renderDistortedMap(heightMap, distortedHeightMap, new Color(0, 0, 0, 1), 0, passShift);
             planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1, passShift);
         }
 
-        if (lowerLayer != null)
-        {
-            if (lowerLayer.getHeightMap() != null && !heightShift)
-            {
+        if (lowerLayer != null) {
+            if (lowerLayer.getHeightMap() != null && !heightShift) {
                 planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
 
                 // merge lower layers into distorted maps
@@ -104,10 +106,8 @@ public class MaterialEditor : MaterialEditorAbstract
                 Color32[] lowerHeight = getLowerLayerHeightMapPixels();
                 Color32[] lowerNormal = getLowerLayerNormalMapPixels();
 
-                for (int i = 0; i < combinedColor.Length; i++)
-                {
-                    if (mask[i])
-                    {
+                for (int i = 0; i < combinedColor.Length; i++) {
+                    if (mask[i]) {
                         combinedColor[i] = lowerColor[i];
                         combinedHeight[i] = lowerHeight[i];
                         combinedNormal[i] = lowerNormal[i];
@@ -119,28 +119,20 @@ public class MaterialEditor : MaterialEditorAbstract
                 distortedNormalMap.Apply();
                 distortedHeightMap.SetPixels32(combinedHeight);
                 distortedHeightMap.Apply();
-            }
-            else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2, passShift); }
-        }
-        else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift); }
+            } else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2, passShift); }
+        } else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift); }
 
         setTextures();
     }
 
-    public override int getUsedPassesCount()
-    {
-        if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + 3; }
-        else { return 3; }
+    public override int getUsedPassesCount() {
+        if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + 3; } else { return 3; }
     }
 
-    private Color32[] getLowerLayerColorMapPixels()
-    {
-        try
-        {
+    private Color32[] getLowerLayerColorMapPixels() {
+        try {
             return lowerLayer.getColorMap().GetPixels32();
-        }
-        catch (Exception ignored)
-        {
+        } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
             PlanarMesh.SetTextureImporterFormat(lowerLayer.getColorMap(), true);
@@ -148,14 +140,10 @@ public class MaterialEditor : MaterialEditorAbstract
         }
     }
 
-    private Color32[] getLowerLayerHeightMapPixels()
-    {
-        try
-        {
+    private Color32[] getLowerLayerHeightMapPixels() {
+        try {
             return lowerLayer.getHeightMap().GetPixels32();
-        }
-        catch (Exception ignored)
-        {
+        } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
             PlanarMesh.SetTextureImporterFormat(lowerLayer.getHeightMap(), true);
@@ -163,14 +151,10 @@ public class MaterialEditor : MaterialEditorAbstract
         }
     }
 
-    private Color32[] getLowerLayerNormalMapPixels()
-    {
-        try
-        {
+    private Color32[] getLowerLayerNormalMapPixels() {
+        try {
             return lowerLayer.getNormalMap().GetPixels32();
-        }
-        catch (Exception ignored)
-        {
+        } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
             PlanarMesh.SetTextureImporterFormat(lowerLayer.getNormalMap(), true);
@@ -178,20 +162,16 @@ public class MaterialEditor : MaterialEditorAbstract
         }
     }
 
-    private bool[] getMask()
-    {
+    private bool[] getMask() {
         Color32[] heightCurrent = getHeightMap().GetPixels32();
         bool[] result = new bool[heightCurrent.Length];
 
         Color32[] heightLower = getLowerLayerHeightMapPixels();
-        if (heightLower.Length == heightCurrent.Length)
-        {
-            for (int i = 0; i < result.Length; i++)
-            {
+        if (heightLower.Length == heightCurrent.Length) {
+            for (int i = 0; i < result.Length; i++) {
                 result[i] = heightCurrent[i].r <= heightLower[i].r;
             }
-        }
-        else { throw new Exception("bottom layer texture is smaller"); }
+        } else { throw new Exception("bottom layer texture is smaller"); }
 
         return result;
     }

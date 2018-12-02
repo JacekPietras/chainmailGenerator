@@ -16,7 +16,7 @@ public class TextureObject {
         this.x = x;
         this.y = y;
         this.rotation = color.r;
-        this.scale = color.g/5;
+        this.scale = color.g/3;
         this.unused = color.b;
     }
 

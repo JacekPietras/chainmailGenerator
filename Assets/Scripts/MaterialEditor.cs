@@ -59,20 +59,25 @@ public class MaterialEditor : MaterialEditorAbstract {
     }
 
     void OnDestroy() {
+        String outputPath = "Assets/OutputMaps/";
+        if (Directory.Exists(outputPath)) {
+            Directory.Delete(outputPath, true);
+        }
+        Directory.CreateDirectory(outputPath);
         // map is also saved in asset files so we can use it in other places
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
+        System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 
-        String path = "Assets/Normalization/";
-        if (Directory.Exists(path)) {
-            Directory.Delete(path, true);
+        String normalizationParh = outputPath + "Normalization/";
+        if (Directory.Exists(normalizationParh)) {
+            Directory.Delete(normalizationParh, true);
         }
         if (showingNormalization) {
-            Directory.CreateDirectory(path);
+            Directory.CreateDirectory(normalizationParh);
             int i = 0;
             foreach (Texture2D tex in planarMesh.texList) {
                 if (tex == null) continue;

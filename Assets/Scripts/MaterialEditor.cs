@@ -71,6 +71,7 @@ public class MaterialEditor : MaterialEditorAbstract {
         Directory.CreateDirectory(path);
         int i = 0;
         foreach (Texture2D tex in planarMesh.texList) {
+            if (tex == null) continue;
             System.IO.File.WriteAllBytes("Assets/Normalization/" + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
             i++;
         }

@@ -12,6 +12,7 @@ public class PlanarMesh {
     public Texture2D[] texList;
     private int normalizationStep = 0;
     private float normalizationStrength = 0.5f;
+    private int neighbourRadius = 1;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<TextureObject>[] textureObjectsOnTriangles;
@@ -98,6 +99,21 @@ public class PlanarMesh {
         }
     }
 
+    private bool isNeighbour(Triangle3D n, List<Triangle3D> list) {
+        foreach (Triangle3D p in list) {
+            if (n.isNeighbour(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Vector3 getCross(Mesh mesh3d, int k) {
+        return Vector3.Cross(
+            mesh3d.vertices[mesh3d.triangles[k + 1]] - mesh3d.vertices[mesh3d.triangles[k + 0]],
+            mesh3d.vertices[mesh3d.triangles[k + 2]] - mesh3d.vertices[mesh3d.triangles[k + 0]]);
+    }
+
     private void fillNeighbours(Mesh mesh3d, int current) {
         // list of unique verts around neighbours, values there can change after update
         // we need to recreatethat list using triVert array
@@ -110,6 +126,10 @@ public class PlanarMesh {
         List<int> triangles = new List<int>();
         List<Edge> edges = new List<Edge>();
         List<int> index = new List<int>();
+        List<int> previousNeighborhoodIndexes = new List<int>();
+        List<Triangle3D> previousNeighborhood = new List<Triangle3D>();
+        List<Triangle3D> currentNeighborhood = new List<Triangle3D>();
+        bool[,] edgeConnections = new bool[mesh3d.triangles.Length, mesh3d.triangles.Length];
 
         // filling first triangle
         // current 3D triangle
@@ -129,62 +149,99 @@ public class PlanarMesh {
         index.Add(current + 0);
         index.Add(current + 1);
         index.Add(current + 2);
+        previousNeighborhood.Add(p);
+        previousNeighborhoodIndexes.Add(current);
 
-        // iterating through every triangle
-        for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
-            if (i == current) continue;
+        Vector3 crossMain = getCross(mesh3d, current);
 
-            Triangle3D n = new Triangle3D(
-                mesh3d.vertices[mesh3d.triangles[i + 0]],
-                mesh3d.vertices[mesh3d.triangles[i + 1]],
-                mesh3d.vertices[mesh3d.triangles[i + 2]]);
+        for (int j = 0; j < neighbourRadius; j++) {
+            foreach (Triangle3D n in currentNeighborhood) {
+                previousNeighborhood.Add(n);
+            }
+            currentNeighborhood.Clear();
+            // iterating through every triangle
+            for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
+                if (previousNeighborhoodIndexes.Contains(i)) continue;
 
-            if (n.isNeighbour(p)) {
-                int indexOfNP1 = unique.IndexOf(n.p1);
-                int indexOfNP2 = unique.IndexOf(n.p2);
-                int indexOfNP3 = unique.IndexOf(n.p3);
+                Triangle3D n = new Triangle3D(
+                    mesh3d.vertices[mesh3d.triangles[i + 0]],
+                    mesh3d.vertices[mesh3d.triangles[i + 1]],
+                    mesh3d.vertices[mesh3d.triangles[i + 2]]);
 
-                if (indexOfNP1 == -1) {
-                    unique.Add(n.p1);
-                    verticles.Add(mesh3d.triangles[i + 0]);
-                    indexOfNP1 = unique.Count - 1;
-                }
-                if (indexOfNP2 == -1) {
-                    unique.Add(n.p2);
-                    verticles.Add(mesh3d.triangles[i + 1]);
-                    indexOfNP2 = unique.Count - 1;
-                }
-                if (indexOfNP3 == -1) {
-                    unique.Add(n.p3);
-                    verticles.Add(mesh3d.triangles[i + 2]);
-                    indexOfNP3 = unique.Count - 1;
-                }
-                triangles.Add(indexOfNP1);
-                triangles.Add(indexOfNP2);
-                triangles.Add(indexOfNP3);
-                index.Add(i + 0);
-                index.Add(i + 1);
-                index.Add(i + 2);
+                if (isNeighbour(n, previousNeighborhood)) {
+                    currentNeighborhood.Add(n);
+                    previousNeighborhoodIndexes.Add(i);
 
-                // filling list of edges that need to be normalized
-                // index need to be less than 3 because indexes 0,1,2 are for mother triangle
-                if (indexOfNP1 >= 3) {
-                    edges.Add(new Edge(indexOfNP2, indexOfNP1));
-                    edges.Add(new Edge(indexOfNP3, indexOfNP1));
-                }
-                if (indexOfNP2 >= 3) {
-                    edges.Add(new Edge(indexOfNP1, indexOfNP2));
-                    edges.Add(new Edge(indexOfNP3, indexOfNP2));
-                }
-                if (indexOfNP3 >= 3) {
-                    edges.Add(new Edge(indexOfNP1, indexOfNP3));
-                    edges.Add(new Edge(indexOfNP2, indexOfNP3));
+                    int indexOfNP1 = unique.IndexOf(n.p1);
+                    int indexOfNP2 = unique.IndexOf(n.p2);
+                    int indexOfNP3 = unique.IndexOf(n.p3);
+
+                    if (indexOfNP1 == -1) {
+                        unique.Add(n.p1);
+                        verticles.Add(mesh3d.triangles[i + 0]);
+                        indexOfNP1 = unique.Count - 1;
+                    }
+                    if (indexOfNP2 == -1) {
+                        unique.Add(n.p2);
+                        verticles.Add(mesh3d.triangles[i + 1]);
+                        indexOfNP2 = unique.Count - 1;
+                    }
+                    if (indexOfNP3 == -1) {
+                        unique.Add(n.p3);
+                        verticles.Add(mesh3d.triangles[i + 2]);
+                        indexOfNP3 = unique.Count - 1;
+                    }
+                    triangles.Add(indexOfNP1);
+                    triangles.Add(indexOfNP2);
+                    triangles.Add(indexOfNP3);
+                    index.Add(i + 0);
+                    index.Add(i + 1);
+                    index.Add(i + 2);
+                    Vector3 cross = getCross(mesh3d, i);
+                    float strength = 1 - Vector3.Angle(crossMain, cross) / 180;
+
+                    addEdges(edges, edgeConnections, indexOfNP1, indexOfNP2, indexOfNP3, strength);
                 }
             }
         }
 
         neighbours[current / 3] = new Neighbour(index, triangles, verticles, edges);
         // Debug.Log("neighbour: " + (current / 3 + 1) + ", triangles " + (tri.Count / 3 - 1) + ", vert " + (vert.Count));
+    }
+
+    private void addEdges(List<Edge> edges, bool[,] edgeConnections, int indexOfNP1, int indexOfNP2, int indexOfNP3, float strength) {
+        // filling list of edges that need to be normalized
+        // index need to be less than 3 because indexes 0,1,2 are for mother triangle
+        if (indexOfNP1 >= 3) {
+            if (!edgeConnections[indexOfNP2, indexOfNP1]) {
+                edges.Add(new Edge(indexOfNP2, indexOfNP1, strength));
+                edgeConnections[indexOfNP2, indexOfNP1] = true;
+            }
+            if (!edgeConnections[indexOfNP3, indexOfNP1]) {
+                edges.Add(new Edge(indexOfNP3, indexOfNP1, strength));
+                edgeConnections[indexOfNP3, indexOfNP1] = true;
+            }
+        }
+        if (indexOfNP2 >= 3) {
+            if (!edgeConnections[indexOfNP1, indexOfNP2]) {
+                edges.Add(new Edge(indexOfNP1, indexOfNP2, strength));
+                edgeConnections[indexOfNP1, indexOfNP2] = true;
+            }
+            if (!edgeConnections[indexOfNP3, indexOfNP2]) {
+                edges.Add(new Edge(indexOfNP3, indexOfNP2, strength));
+                edgeConnections[indexOfNP3, indexOfNP2] = true;
+            }
+        }
+        if (indexOfNP3 >= 3) {
+            if (!edgeConnections[indexOfNP1, indexOfNP3]) {
+                edges.Add(new Edge(indexOfNP1, indexOfNP3, strength));
+                edgeConnections[indexOfNP1, indexOfNP3] = true;
+            }
+            if (!edgeConnections[indexOfNP2, indexOfNP3]) {
+                edges.Add(new Edge(indexOfNP2, indexOfNP3, strength));
+                edgeConnections[indexOfNP2, indexOfNP3] = true;
+            }
+        }
     }
 
     // mesh of triangle with his neighbours
@@ -228,36 +285,36 @@ public class PlanarMesh {
 
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
                     Texture2D tex = new Texture2D(1024, 1024);
-
-                    //for (int k = 0; k < localMesh.triangles.Length; k += 3) {
-                    for (int k = localMesh.triangles.Length - 3; k >= 0; k -= 3) {
-
-                        Triangle3D uuu = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
-                                                    transformedVerticles[localMesh.triangles[k + 1]],
-                                                    transformedVerticles[localMesh.triangles[k + 2]]);
-                        /*
-
-                        Triangle3D vvv = new Triangle3D(gridVertices[neighbour.index[k + 0]],
-                                                        gridVertices[neighbour.index[k + 1]],
-                                                        gridVertices[neighbour.index[k + 2]]);
-                        uuu.print("on ring");
-                        vvv.print("on cube");*/
-                        uvList.Add(transformedVerticles[localMesh.triangles[k + 0]]);
-                        uvList.Add(transformedVerticles[localMesh.triangles[k + 1]]);
-                        uvList.Add(transformedVerticles[localMesh.triangles[k + 2]]);
-
-                        vertList.Add(gridVertices[neighbour.index[k + 0]]);
-                        vertList.Add(gridVertices[neighbour.index[k + 1]]);
-                        vertList.Add(gridVertices[neighbour.index[k + 2]]);
-
-                        DrawEdge(tex, uuu.p1.x, uuu.p1.y, uuu.p2.x, uuu.p2.y, k / 3);
-                        DrawEdge(tex, uuu.p1.x, uuu.p1.y, uuu.p3.x, uuu.p3.y, k / 3);
-                        DrawEdge(tex, uuu.p3.x, uuu.p3.y, uuu.p2.x, uuu.p2.y, k / 3);
-                    }
                     DrawEdge(tex, 0, 0, 0, 1, -1);
                     DrawEdge(tex, 0, 0, 1, 0, -1);
                     DrawEdge(tex, 1, 1, 1, 0, -1);
                     DrawEdge(tex, 1, 1, 0, 1, -1);
+
+                    //for (int k = 0; k < localMesh.triangles.Length; k += 3) {
+                    for (int k = localMesh.triangles.Length - 3; k >= 0; k -= 3) {
+
+                        Triangle3D triUV = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
+                                                    transformedVerticles[localMesh.triangles[k + 1]],
+                                                    transformedVerticles[localMesh.triangles[k + 2]]);
+
+                        if (triUV.isOnTexture()) {
+                            uvList.Add(triUV.p1);
+                            uvList.Add(triUV.p2);
+                            uvList.Add(triUV.p3);
+
+                            vertList.Add(gridVertices[neighbour.index[k + 0]]);
+                            vertList.Add(gridVertices[neighbour.index[k + 1]]);
+                            vertList.Add(gridVertices[neighbour.index[k + 2]]);
+
+                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p2.x, triUV.p2.y, k / 3);
+                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p3.x, triUV.p3.y, k / 3);
+                            DrawEdge(tex, triUV.p3.x, triUV.p3.y, triUV.p2.x, triUV.p2.y, k / 3);
+                        } else {
+                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p2.x, triUV.p2.y, -2);
+                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p3.x, triUV.p3.y, -2);
+                            DrawEdge(tex, triUV.p3.x, triUV.p3.y, triUV.p2.x, triUV.p2.y, -2);
+                        }
+                    }
                     tex.Apply();
                     texList[normalizationStep] = tex;
                 }
@@ -268,21 +325,34 @@ public class PlanarMesh {
             normalizationStep++;
         }
 
-        mesh.vertices = vertList.ToArray();
+        int[] triangles = new int[vertList.Count];
+        Vector3[] normals = new Vector3[vertList.Count];
+        Vector3[] vertices = vertList.ToArray();
+        // iterating through every point
+        for (int i = 0; i < vertList.Count; i++) {
+            // filling positions of points in triangle
+            triangles[i] = i;
+            // all normals will be fixed
+            normals[i] = Vector3.forward;
+        }
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.normals = normals;
         mesh.uv = uvList.ToArray();
-        fillMeshTriangles();
     }
 
     void DrawEdge(Texture2D tex, float x0, float y0, float x1, float y1, int index) {
         if (!showingNormalization) {
             return;
         }
-        int padding = (int)(tex.width * 0.4f);
+        int padding = (int)(tex.width * 0.45f);
         int size = tex.width - 2 * padding;
         Color color = Color.blue;
 
-        if (index < 0) {
+        if (index == -1) {
             color = Color.black;
+        } else if (index == -2) {
+            color = Color.gray;
         } else if (index == 0) {
             color = Color.red;
         }
@@ -301,8 +371,8 @@ public class PlanarMesh {
         dx <<= 1;
 
         float fraction = 0;
-
-        tex.SetPixel(x0, y0, col);
+        if (x0 >= 0 && x0 <= 1024 && y0 >= 0 && y0 <= 1024)
+            tex.SetPixel(x0, y0, col);
         if (dx > dy) {
             fraction = dy - (dx >> 1);
             while (Mathf.Abs(x0 - x1) > 1) {
@@ -312,7 +382,8 @@ public class PlanarMesh {
                 }
                 x0 += stepx;
                 fraction += dy;
-                tex.SetPixel(x0, y0, col);
+                if (x0 >= 0 && x0 <= 1024 && y0 >= 0 && y0 <= 1024)
+                    tex.SetPixel(x0, y0, col);
             }
         } else {
             fraction = dx - (dy >> 1);
@@ -323,7 +394,8 @@ public class PlanarMesh {
                 }
                 y0 += stepy;
                 fraction += dx;
-                tex.SetPixel(x0, y0, col);
+                if (x0 >= 0 && x0 <= 1024 && y0 >= 0 && y0 <= 1024)
+                    tex.SetPixel(x0, y0, col);
             }
         }
     }

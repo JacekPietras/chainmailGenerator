@@ -8,13 +8,20 @@ public class MeshFlat {
 
     public Vector3[] vertices;
     public int[] triangles;
+    public float[] strength;
     public Edge[] edges;
 
     public void rotateAndFlattenMesh() {
-        Vector3 cross = Vector3.Cross(vertices[1] - vertices[0], vertices[2] - vertices[0]);
-        Quaternion qAngle = Quaternion.LookRotation(cross);
+        Vector3[] cross = new Vector3[triangles.Length / 3];
+        strength = new float[triangles.Length / 3];
+        for (int k = 0; k < triangles.Length; k += 3) {
+            cross[k / 3] = Vector3.Cross(vertices[triangles[k + 1]] - vertices[triangles[k + 0]], vertices[triangles[k + 2]] - vertices[triangles[k + 0]]);
+            strength[k / 3] = 1 - Vector3.Angle(cross[0], cross[k / 3]) / 180;
+        }
 
         //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
+
+        Quaternion qAngle = Quaternion.LookRotation(cross[0]);
 
         for (int i = 0; i < vertices.Length; i++) {
             vertices[i] = qAngle * vertices[i];
@@ -23,7 +30,7 @@ public class MeshFlat {
     }
 
     public void normalizeFlatMesh(int times) {
-        if (times > 0 && separateOverLappingVerticles()) {
+        while (times > 0 && separateOverLappingVerticles()) {
             times--;
         }
         for (int i = 0; i < times; i++)
@@ -42,7 +49,7 @@ public class MeshFlat {
                      + vertices[1] - vertices[edge.from]
                      + vertices[2] - vertices[edge.from]);
                 currentLength = Mathf.Abs(move.magnitude);
-                float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH;
+                float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
                 vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
                 separated = true;
             }
@@ -55,7 +62,7 @@ public class MeshFlat {
         foreach (Edge edge in edges) {
             Vector3 move = vertices[edge.to] - vertices[edge.from];
             float currentLength = Mathf.Abs(move.magnitude);
-            float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH;
+            float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
             vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
         }
     }

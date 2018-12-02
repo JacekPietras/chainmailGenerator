@@ -11,7 +11,7 @@ public class MaterialEditorBackground : MaterialEditorAbstract
     private Texture2D distortedHeightMap;
     private Texture2D distortedNormalMap;
     private PlanarMesh planarMesh;
-
+    
     public override Texture2D getColorMap()
     {
         if (colorMap == null && lowerLayer != null) { return lowerLayer.getColorMap(); }

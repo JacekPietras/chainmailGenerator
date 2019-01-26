@@ -14,9 +14,10 @@ public class MeshFlat {
     private Triangle2D motherTriangle;
     public List<int> usedTriangles = new List<int>();
 
-    private bool testAllInside = true;
+    private bool detectOverlappingOnAllTriangles = true;
 
-    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength) {
+    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength, bool detectOverlappingOnAllTriangles) {
+        this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
         vertices = new Vector3[neighbour.verticles.Length];
         for (int j = 0; j < vertices.Length; j++) {
             vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
@@ -119,7 +120,7 @@ public class MeshFlat {
             times--;
         }
         for (int i = 0; i < times; i++) {
-            if (testAllInside) {
+            if (detectOverlappingOnAllTriangles) {
                 separateOverLappingAllFaces();
             } else {
                 separateOverLappingMotherFace();

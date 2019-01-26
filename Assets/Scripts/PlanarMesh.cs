@@ -14,6 +14,7 @@ public class PlanarMesh {
     private int normalizationStep = 0;
     private float normalizationStrength = 0.5f;
     private int neighbourRadius = 1;
+    private bool detectOverlappingOnAllTriangles = false;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<TextureObject>[] textureObjectsOnTriangles;
@@ -25,11 +26,19 @@ public class PlanarMesh {
         createCleaningMesh();
     }
 
-    public PlanarMesh(Mesh mesh3d, Texture2D objectMap, int normalizationSteps, float normalizationStrength, bool showingNormalization, int neighbourRadius) {
+    public PlanarMesh(
+            Mesh mesh3d,
+            Texture2D objectMap,
+            int normalizationSteps,
+            float normalizationStrength,
+            bool showingNormalization,
+            int neighbourRadius,
+            bool detectOverlappingOnAllTriangles) {
         this.neighbourRadius = neighbourRadius;
         this.normalizationStepMax = normalizationSteps;
         this.normalizationStrength = normalizationStrength;
         this.showingNormalization = showingNormalization;
+        this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
 
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
@@ -116,7 +125,7 @@ public class PlanarMesh {
             if (textureObjectsOnTriangles[i / 3] != null) {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
-                MeshFlat localMesh = new MeshFlat(mesh3d, neighbour, normalizationStrength);
+                MeshFlat localMesh = new MeshFlat(mesh3d, neighbour, normalizationStrength, detectOverlappingOnAllTriangles);
 
                 // we will iterate through objects on current triangle
                 // and list every that contains at least part of any object
@@ -143,7 +152,7 @@ public class PlanarMesh {
                     }
                 }
 
-                localMesh.makeEdges();                
+                localMesh.makeEdges();
 
                 if (showingNormalization) {
                     localMesh.normalizeFlatMesh(normalizationStep);

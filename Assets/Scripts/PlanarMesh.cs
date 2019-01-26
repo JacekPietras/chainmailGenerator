@@ -8,6 +8,7 @@ public class PlanarMesh {
     private Mesh mesh;
     private Mesh cleaningMesh;
     private int normalizationStepMax = 10;
+    // debug option to draw out progress of normalization in bitmaps
     private bool showingNormalization = false;
     public Texture2D[] texList;
     private int normalizationStep = 0;
@@ -77,15 +78,14 @@ public class PlanarMesh {
             Vector2 u1 = mesh3d.uv[mesh3d.triangles[i + 0]];
             Vector2 u2 = mesh3d.uv[mesh3d.triangles[i + 1]];
             Vector2 u3 = mesh3d.uv[mesh3d.triangles[i + 2]];
+            //Triangle3D vvv = new Triangle3D(u1, u2, u3);
+            //vvv.print("index " + i / 3);
 
             // verticles of new mesh will be created from UV points of 3D object
             // we need to normalize Y value because it's for texture
             gridVertices[i + 0] = new Vector3(u1.x, 1 - u1.y);
             gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
             gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
-
-            //Triangle3D vvv = new Triangle3D(u1, u2, u3);
-            //vvv.print("index " + i / 3);
 
             foreach (TextureObject obj in objects) {
                 Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
@@ -102,30 +102,7 @@ public class PlanarMesh {
         }
     }
 
-    // mesh of triangle with his neighbours
-    private MeshFlat BuildLocalMesh(Mesh mesh3d, Neighbour neighbour) {
-        Vector3[] vertices = new Vector3[neighbour.verticles.Length];
-        for (int j = 0; j < vertices.Length; j++) {
-            vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
-        }
-
-        MeshFlat localMesh = new MeshFlat();
-        localMesh.NORMALIZATION_STRENGTH = normalizationStrength;
-        localMesh.vertices = vertices;
-        localMesh.triangles = neighbour.triangles;
-        localMesh.edges = neighbour.edges;
-        localMesh.fillEdgeLength();
-
-        localMesh.rotateAndFlattenMesh();
-        if (showingNormalization) {
-            localMesh.normalizeFlatMesh(normalizationStep);
-        } else {
-            localMesh.normalizeFlatMesh(normalizationStepMax);
-        }
-
-        return localMesh;
-    }
-
+    // recalculate positions of planar mesh verticles
     public void updateMesh(Mesh mesh3d) {
         Debug.Log("-------------------------------------");
         List<Vector2> uvList = new List<Vector2>();
@@ -133,48 +110,66 @@ public class PlanarMesh {
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
+            // we should do operations only if there is at least one point on current triangle
             if (textureObjectsOnTriangles[i / 3] != null) {
                 Neighbour neighbour = neighbours[i / 3];
-                MeshFlat localMesh = BuildLocalMesh(mesh3d, neighbour);
+                // mesh of triangle with his neighbours
+                MeshFlat localMesh = new MeshFlat(mesh3d, neighbour, normalizationStrength);
+                List<int> usedTriangles = new List<int>();
 
+                // we will iterate through objects on current triangle
+                // and list every that contains at least part of any object
+                // (after only flattening, without normalization)
                 foreach (TextureObject obj in textureObjectsOnTriangles[i / 3]) {
-                    //TODO remove that sin rotation
-                    //obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
+                    // TODO remove that sin rotation
+                    // obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
 
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
-                    Texture2D tex = new Texture2D(1024, 1024);
-                    DrawEdge(tex, 0, 0, 0, 1, -1);
-                    DrawEdge(tex, 0, 0, 1, 0, -1);
-                    DrawEdge(tex, 1, 1, 1, 0, -1);
-                    DrawEdge(tex, 1, 1, 0, 1, -1);
 
-                    //for (int k = 0; k < localMesh.triangles.Length; k += 3) {
+                    // going from end to begining, because we wanna to render first element as last
+                    // over every other element
+                    // for (int k = 0; k < localMesh.triangles.Length; k += 3) {
                     for (int k = localMesh.triangles.Length - 3; k >= 0; k -= 3) {
+                        if (usedTriangles.Contains(k)) {
+                            continue;
+                        }
+                        Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
+                                                    transformedVerticles[localMesh.triangles[k + 1]],
+                                                    transformedVerticles[localMesh.triangles[k + 2]]);
+                        if (triangle.isOnTexture()) {
+                            usedTriangles.Add(k);
+                        }
+                    }
+                }
 
-                        Triangle3D triUV = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
+                localMesh.makeEdges(usedTriangles);                
+
+                if (showingNormalization) {
+                    localMesh.normalizeFlatMesh(normalizationStep);
+                } else {
+                    localMesh.normalizeFlatMesh(normalizationStepMax);
+                }
+
+                foreach (TextureObject obj in textureObjectsOnTriangles[i / 3]) {
+                    Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
+                    Texture2D tex = createTextureForDebug();
+
+                    foreach (int k in usedTriangles) {
+                        Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
                                                     transformedVerticles[localMesh.triangles[k + 1]],
                                                     transformedVerticles[localMesh.triangles[k + 2]]);
 
-                        if (triUV.isOnTexture()) {
-                            uvList.Add(triUV.p1);
-                            uvList.Add(triUV.p2);
-                            uvList.Add(triUV.p3);
+                        uvList.Add(triangle.p1);
+                        uvList.Add(triangle.p2);
+                        uvList.Add(triangle.p3);
 
-                            vertList.Add(gridVertices[neighbour.index[k + 0]]);
-                            vertList.Add(gridVertices[neighbour.index[k + 1]]);
-                            vertList.Add(gridVertices[neighbour.index[k + 2]]);
+                        vertList.Add(gridVertices[neighbour.index[k + 0]]);
+                        vertList.Add(gridVertices[neighbour.index[k + 1]]);
+                        vertList.Add(gridVertices[neighbour.index[k + 2]]);
 
-                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p2.x, triUV.p2.y, k / 3);
-                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p3.x, triUV.p3.y, k / 3);
-                            DrawEdge(tex, triUV.p3.x, triUV.p3.y, triUV.p2.x, triUV.p2.y, k / 3);
-                        } else {
-                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p2.x, triUV.p2.y, -2);
-                            DrawEdge(tex, triUV.p1.x, triUV.p1.y, triUV.p3.x, triUV.p3.y, -2);
-                            DrawEdge(tex, triUV.p3.x, triUV.p3.y, triUV.p2.x, triUV.p2.y, -2);
-                        }
+                        drawDebugTriangle(tex, triangle, k);
                     }
-                    tex.Apply();
-                    texList[normalizationStep] = tex;
+                    applyDebugTexture(tex);
                 }
             }
         }
@@ -198,6 +193,32 @@ public class PlanarMesh {
         mesh.triangles = triangles;
         mesh.normals = normals;
         mesh.uv = uvList.ToArray();
+    }
+
+    private Texture2D createTextureForDebug() {
+        if (!showingNormalization) {
+            return null;
+        }
+        Texture2D tex = new Texture2D(1024, 1024);
+        DrawEdge(tex, 0, 0, 0, 1, -1);
+        DrawEdge(tex, 0, 0, 1, 0, -1);
+        DrawEdge(tex, 1, 1, 1, 0, -1);
+        DrawEdge(tex, 1, 1, 0, 1, -1);
+        return tex;
+    }
+
+    private void applyDebugTexture(Texture2D tex) {
+        if (!showingNormalization) {
+            return;
+        }
+        tex.Apply();
+        texList[normalizationStep] = tex;
+    }
+
+    private void drawDebugTriangle(Texture2D tex, Triangle3D tri, int color) {
+        DrawEdge(tex, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, color);
+        DrawEdge(tex, tri.p1.x, tri.p1.y, tri.p3.x, tri.p3.y, color);
+        DrawEdge(tex, tri.p3.x, tri.p3.y, tri.p2.x, tri.p2.y, color);
     }
 
     void DrawEdge(Texture2D tex, float x0, float y0, float x1, float y1, int index) {

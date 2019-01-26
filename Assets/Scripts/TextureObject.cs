@@ -11,17 +11,15 @@ public class TextureObject {
     public float unused;
     public Barycentric barycentric;
 
-    public TextureObject(float x, float y, Color color)
-    {
+    public TextureObject(float x, float y, Color color) {
         this.x = x;
         this.y = y;
         this.rotation = color.r;
-        this.scale = color.g/15;
+        this.scale = color.g / 5;
         this.unused = color.b;
     }
 
-    public TextureObject(TextureObject original)
-    {
+    public TextureObject(TextureObject original) {
         this.x = original.x;
         this.y = original.y;
         this.rotation = original.rotation;
@@ -29,13 +27,11 @@ public class TextureObject {
         this.unused = original.unused;
     }
 
-    public Vector2 toVector2()
-    {
-        return new Vector2(x,y);
+    public Vector2 toVector2() {
+        return new Vector2(x, y);
     }
 
-    public TextureObject copyWithBarycentric(Barycentric barycentric)
-    {
+    public TextureObject copyWithBarycentric(Barycentric barycentric) {
         TextureObject copy = new TextureObject(this);
         copy.barycentric = barycentric;
         return copy;

@@ -8,17 +8,91 @@ public class MeshFlat {
 
     public Vector3[] vertices;
     public int[] triangles;
-    public float[] strength;
-    public Edge[] edges;
-
+    public List<Edge> edges;
+    private bool[,] edgeConnections;
+    private Vector3 crossMain;
     private Triangle2D motherTriangle;
 
-    public void rotateAndFlattenMesh() {
+    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength) {
+        vertices = new Vector3[neighbour.verticles.Length];
+        for (int j = 0; j < vertices.Length; j++) {
+            vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
+        }
+
+        NORMALIZATION_STRENGTH = normalizationStrength;
+        triangles = neighbour.triangles;
+        rotateMesh();
+
+        crossMain = getCross(0);
+    }
+
+    public void makeEdges(List<int> usedTriangles) {
+        edgeConnections = new bool[triangles.Length, triangles.Length];
+        edges = new List<Edge>();
+
+        foreach (int k in usedTriangles) {
+            addEdges(k,
+                triangles[k + 0],
+                triangles[k + 1],
+                triangles[k + 2]);
+        }
+        
+        edges.Sort((x, y) => y.strength.CompareTo(x.strength));
+
+        // filling edge expected length with knowledge of current 3D object
+        // (it's length from 3D, not flattened. But in best scenario
+        // we want flattened edge to have same length as one from 3D)
+        fillEdgeLength();
+        flattenMesh();
+    }
+
+    // filling list of edges that will be used to normalization of triangles
+    // list won't contain for example edges in main triangle, because we don't wanna to distort him
+    public void addEdges(int i, params int[] indexOfNP) {
+        // we need to iterate through indexOfNP (3 elements)
+        for (int k = 0; k < indexOfNP.Length; k++) {
+            // index need to be less than 3 because indexes 0,1,2 are for mother triangle
+            if (indexOfNP[k] >= 3) {
+                // we need to iterate through indexOfNP again
+                // but choose all point that are not current k
+                for (int j = 0; j < indexOfNP.Length; j++) {
+                    if (k != j) {
+                        // checking if that edge already exist
+                        if (!edgeConnections[indexOfNP[j], indexOfNP[k]]) {
+                            // not existing, we need to create that edge from j to k
+                            // and mark that edge as created
+                            // notice that j->k is different than k->j
+                            edges.Add(new Edge(indexOfNP[j], indexOfNP[k], getStrength(i)));
+
+                            Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k]+" s"+ getStrength(i));
+
+                            edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private Vector3 getCross(int k) {
+        return Vector3.Cross(
+            vertices[triangles[k + 1]] - vertices[triangles[k + 0]],
+            vertices[triangles[k + 2]] - vertices[triangles[k + 0]]);
+    }
+
+    // returns variable [0..1] that is saying how much that triangle 
+    // is pararell to triangle with current object
+    private float getStrength(int i) {
+        Vector3 cross = getCross(i);
+        float strength = 1 - Vector3.Angle(crossMain, cross) / 180;
+        // we need to make ones close to 1 more important 
+        return strength * strength;
+    }
+
+    public void rotateMesh() {
         Vector3[] cross = new Vector3[triangles.Length / 3];
-        strength = new float[triangles.Length / 3];
         for (int k = 0; k < triangles.Length; k += 3) {
             cross[k / 3] = Vector3.Cross(vertices[triangles[k + 1]] - vertices[triangles[k + 0]], vertices[triangles[k + 2]] - vertices[triangles[k + 0]]);
-            strength[k / 3] = 1 - Vector3.Angle(cross[0], cross[k / 3]) / 180;
         }
 
         //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
@@ -27,6 +101,11 @@ public class MeshFlat {
 
         for (int i = 0; i < vertices.Length; i++) {
             vertices[i] = qAngle * vertices[i];
+        }
+    }
+
+    public void flattenMesh() {
+        for (int i = 0; i < vertices.Length; i++) {
             vertices[i].z = 0;
         }
 

@@ -16,27 +16,21 @@ public class NeighbourCreator {
     // list of triangles. Verticles should be accessed from mesh3d.vertices
     // with mapping from triVert array
     private List<int> triangles = new List<int>();
-    private List<Edge> edges = new List<Edge>();
     private List<int> index = new List<int>();
     private List<int> previousNeighborhoodIndexes = new List<int>();
     private List<Triangle3D> previousNeighborhood = new List<Triangle3D>();
     private List<Triangle3D> currentNeighborhood = new List<Triangle3D>();
-    private bool[,] edgeConnections;
-    private Vector3 crossMain;
 
     public NeighbourCreator(Mesh mesh3d, int current, int neighbourRadius) {
         this.mesh3d = mesh3d;
         this.current = current;
         this.neighbourRadius = neighbourRadius;
-
-        edgeConnections = new bool[mesh3d.triangles.Length, mesh3d.triangles.Length];
-        crossMain = getCross(mesh3d, current);
     }
 
     public Neighbour create() {
         fillFirstTriangle();
         fillRestOfTriangles();
-        return new Neighbour(index, triangles, verticles, edges);
+        return new Neighbour(index, triangles, verticles);
     }
 
     private Triangle3D getTriangleFor(int i) {
@@ -93,8 +87,6 @@ public class NeighbourCreator {
                     index.Add(i + 0);
                     index.Add(i + 1);
                     index.Add(i + 2);
-
-                    addEdges(edges, edgeConnections, indexOfNP, getStrength(i));
                 }
             }
         }
@@ -140,12 +132,6 @@ public class NeighbourCreator {
         return indexOfNP;
     }
 
-    private Vector3 getCross(Mesh mesh3d, int k) {
-        return Vector3.Cross(
-            mesh3d.vertices[mesh3d.triangles[k + 1]] - mesh3d.vertices[mesh3d.triangles[k + 0]],
-            mesh3d.vertices[mesh3d.triangles[k + 2]] - mesh3d.vertices[mesh3d.triangles[k + 0]]);
-    }
-
     private bool isNeighbour(Triangle3D n, List<Triangle3D> list) {
         foreach (Triangle3D p in list) {
             if (n.isNeighbour(p)) {
@@ -153,37 +139,5 @@ public class NeighbourCreator {
             }
         }
         return false;
-    }
-
-    // returns variable [0..1] that is saying how much that triangle 
-    // is pararell to triangle with current object
-    private float getStrength(int i) {
-        Vector3 cross = getCross(mesh3d, i);
-        return 1 - Vector3.Angle(crossMain, cross) / 180;
-    }
-
-    // filling list of edges that will be used to normalization of triangles
-    // list won't contain for example edges in main triangle, because we don't wanna to distort him
-    private void addEdges(List<Edge> edges, bool[,] edgeConnections, int[] indexOfNP, float strength) {
-        // we need to iterate through indexOfNP (3 elements)
-        for (int k = 0; k < indexOfNP.Length; k++) {
-            // index need to be less than 3 because indexes 0,1,2 are for mother triangle
-            if (indexOfNP[k] >= 3) {
-                // we need to iterate through indexOfNP again
-                // but choose all point that are not current k
-                for (int j = 0; j < indexOfNP.Length; j++) {
-                    if (k != j) {
-                        // checking if that edge already exist
-                        if (!edgeConnections[indexOfNP[j], indexOfNP[k]]) {
-                            // not existing, we need to create that edge from j to k
-                            // and mark that edge as created
-                            // notice that j->k is different than k->j
-                            edges.Add(new Edge(indexOfNP[j], indexOfNP[k], strength));
-                            edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
-                        }
-                    }
-                }
-            }
-        }
     }
 }

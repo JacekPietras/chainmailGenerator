@@ -15,9 +15,11 @@ public class MeshFlat {
     public List<int> usedTriangles = new List<int>();
 
     private bool detectOverlappingOnAllTriangles = true;
+    private bool distortMother = false;
 
-    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength, bool detectOverlappingOnAllTriangles) {
+    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength, bool detectOverlappingOnAllTriangles, bool distortMother) {
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
+        this.distortMother = distortMother;
         vertices = new Vector3[neighbour.verticles.Length];
         for (int j = 0; j < vertices.Length; j++) {
             vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
@@ -56,7 +58,7 @@ public class MeshFlat {
         // we need to iterate through indexOfNP (3 elements)
         for (int k = 0; k < indexOfNP.Length; k++) {
             // index need to be less than 3 because indexes 0,1,2 are for mother triangle
-            if (indexOfNP[k] >= 3) {
+            if (indexOfNP[k] >= 3 || distortMother) {
                 // we need to iterate through indexOfNP again
                 // but choose all point that are not current k
                 for (int j = 0; j < indexOfNP.Length; j++) {

@@ -22,6 +22,7 @@ public class MaterialEditor : MaterialEditorAbstract {
     public bool showingNormalization = false;
     public int neighbourRadius = 1;
     public bool detectOverlappingOnAllTriangles = false;
+    public bool distortMother = false;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -64,7 +65,8 @@ public class MaterialEditor : MaterialEditorAbstract {
             normalizationStrength, 
             showingNormalization, 
             neighbourRadius,
-            detectOverlappingOnAllTriangles);
+            detectOverlappingOnAllTriangles,
+            distortMother);
     }
 
     void OnDestroy() {

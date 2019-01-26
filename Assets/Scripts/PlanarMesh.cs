@@ -94,153 +94,10 @@ public class PlanarMesh {
                         textureObjectsOnTriangles[i / 3] = new List<TextureObject>();
                     textureObjectsOnTriangles[i / 3].Add(obj.copyWithBarycentric(a));
 
-                    if (neighbours[i / 3] == null) fillNeighbours(mesh3d, i);
+                    if (neighbours[i / 3] == null) {
+                        neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
+                    }
                 }
-            }
-        }
-    }
-
-    private bool isNeighbour(Triangle3D n, List<Triangle3D> list) {
-        foreach (Triangle3D p in list) {
-            if (n.isNeighbour(p)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static Vector3 getCross(Mesh mesh3d, int k) {
-        return Vector3.Cross(
-            mesh3d.vertices[mesh3d.triangles[k + 1]] - mesh3d.vertices[mesh3d.triangles[k + 0]],
-            mesh3d.vertices[mesh3d.triangles[k + 2]] - mesh3d.vertices[mesh3d.triangles[k + 0]]);
-    }
-
-    private void fillNeighbours(Mesh mesh3d, int current) {
-        // list of unique verts around neighbours, values there can change after update
-        // we need to recreatethat list using triVert array
-        List<Vector3> unique = new List<Vector3>();
-        // list of shortcuts to verticles from 3D mesh, that only indexes so it shouldn't change
-        // we cannot use just verticle list because they are doubled on edges because of uv and normals
-        List<int> verticles = new List<int>();
-        // list of triangles. Verticles should be accessed from mesh3d.vertices
-        // with mapping from triVert array
-        List<int> triangles = new List<int>();
-        List<Edge> edges = new List<Edge>();
-        List<int> index = new List<int>();
-        List<int> previousNeighborhoodIndexes = new List<int>();
-        List<Triangle3D> previousNeighborhood = new List<Triangle3D>();
-        List<Triangle3D> currentNeighborhood = new List<Triangle3D>();
-        bool[,] edgeConnections = new bool[mesh3d.triangles.Length, mesh3d.triangles.Length];
-
-        // filling first triangle
-        // current 3D triangle
-        Triangle3D p = new Triangle3D(
-            mesh3d.vertices[mesh3d.triangles[current + 0]],
-            mesh3d.vertices[mesh3d.triangles[current + 1]],
-            mesh3d.vertices[mesh3d.triangles[current + 2]]);
-        unique.Add(p.p1);
-        unique.Add(p.p2);
-        unique.Add(p.p3);
-        verticles.Add(mesh3d.triangles[current + 0]);
-        verticles.Add(mesh3d.triangles[current + 1]);
-        verticles.Add(mesh3d.triangles[current + 2]);
-        triangles.Add(0);
-        triangles.Add(1);
-        triangles.Add(2);
-        index.Add(current + 0);
-        index.Add(current + 1);
-        index.Add(current + 2);
-        previousNeighborhood.Add(p);
-        previousNeighborhoodIndexes.Add(current);
-
-        Vector3 crossMain = getCross(mesh3d, current);
-
-        for (int j = 0; j < neighbourRadius; j++) {
-            foreach (Triangle3D n in currentNeighborhood) {
-                previousNeighborhood.Add(n);
-            }
-            currentNeighborhood.Clear();
-            // iterating through every triangle
-            for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
-                if (previousNeighborhoodIndexes.Contains(i)) continue;
-
-                Triangle3D n = new Triangle3D(
-                    mesh3d.vertices[mesh3d.triangles[i + 0]],
-                    mesh3d.vertices[mesh3d.triangles[i + 1]],
-                    mesh3d.vertices[mesh3d.triangles[i + 2]]);
-
-                if (isNeighbour(n, previousNeighborhood)) {
-                    currentNeighborhood.Add(n);
-                    previousNeighborhoodIndexes.Add(i);
-
-                    int indexOfNP1 = unique.IndexOf(n.p1);
-                    int indexOfNP2 = unique.IndexOf(n.p2);
-                    int indexOfNP3 = unique.IndexOf(n.p3);
-
-                    if (indexOfNP1 == -1) {
-                        unique.Add(n.p1);
-                        verticles.Add(mesh3d.triangles[i + 0]);
-                        indexOfNP1 = unique.Count - 1;
-                    }
-                    if (indexOfNP2 == -1) {
-                        unique.Add(n.p2);
-                        verticles.Add(mesh3d.triangles[i + 1]);
-                        indexOfNP2 = unique.Count - 1;
-                    }
-                    if (indexOfNP3 == -1) {
-                        unique.Add(n.p3);
-                        verticles.Add(mesh3d.triangles[i + 2]);
-                        indexOfNP3 = unique.Count - 1;
-                    }
-                    triangles.Add(indexOfNP1);
-                    triangles.Add(indexOfNP2);
-                    triangles.Add(indexOfNP3);
-                    index.Add(i + 0);
-                    index.Add(i + 1);
-                    index.Add(i + 2);
-                    Vector3 cross = getCross(mesh3d, i);
-                    float strength = 1 - Vector3.Angle(crossMain, cross) / 180;
-
-                    addEdges(edges, edgeConnections, indexOfNP1, indexOfNP2, indexOfNP3, strength);
-                }
-            }
-        }
-
-        neighbours[current / 3] = new Neighbour(index, triangles, verticles, edges);
-        // Debug.Log("neighbour: " + (current / 3 + 1) + ", triangles " + (tri.Count / 3 - 1) + ", vert " + (vert.Count));
-    }
-
-    private void addEdges(List<Edge> edges, bool[,] edgeConnections, int indexOfNP1, int indexOfNP2, int indexOfNP3, float strength) {
-        // filling list of edges that need to be normalized
-        // index need to be less than 3 because indexes 0,1,2 are for mother triangle
-        if (indexOfNP1 >= 3) {
-            if (!edgeConnections[indexOfNP2, indexOfNP1]) {
-                edges.Add(new Edge(indexOfNP2, indexOfNP1, strength));
-                edgeConnections[indexOfNP2, indexOfNP1] = true;
-            }
-            if (!edgeConnections[indexOfNP3, indexOfNP1]) {
-                edges.Add(new Edge(indexOfNP3, indexOfNP1, strength));
-                edgeConnections[indexOfNP3, indexOfNP1] = true;
-            }
-        }
-        if (indexOfNP2 >= 3) {
-            if (!edgeConnections[indexOfNP1, indexOfNP2]) {
-                edges.Add(new Edge(indexOfNP1, indexOfNP2, strength));
-                edgeConnections[indexOfNP1, indexOfNP2] = true;
-            }
-            if (!edgeConnections[indexOfNP3, indexOfNP2]) {
-                edges.Add(new Edge(indexOfNP3, indexOfNP2, strength));
-                edgeConnections[indexOfNP3, indexOfNP2] = true;
-            }
-        }
-        if (indexOfNP3 >= 3) {
-            if (!edgeConnections[indexOfNP1, indexOfNP3]) {
-                edges.Add(new Edge(indexOfNP1, indexOfNP3, strength));
-                edgeConnections[indexOfNP1, indexOfNP3] = true;
-            }
-            if (!edgeConnections[indexOfNP2, indexOfNP3]) {
-                edges.Add(new Edge(indexOfNP2, indexOfNP3, strength));
-                edgeConnections[indexOfNP2, indexOfNP3] = true;
             }
         }
     }
@@ -416,6 +273,8 @@ public class PlanarMesh {
         mesh.normals = normals;
     }
 
+    // returns list of texture objects on inputed texture
+    // they have relative position, rotation, scale
     private List<TextureObject> createObjects(Texture2D objectMap) {
         try {
             Color color;

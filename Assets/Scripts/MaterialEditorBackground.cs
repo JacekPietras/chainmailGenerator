@@ -96,7 +96,6 @@ public class MaterialEditorBackground : MaterialEditorAbstract
         }
     }
 
-
     public override int getUsedPassesCount()
     {
         if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + (drawingOver ? 1 : 0); }

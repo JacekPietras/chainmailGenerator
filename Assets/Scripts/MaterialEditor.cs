@@ -20,6 +20,7 @@ public class MaterialEditor : MaterialEditorAbstract {
     public int normalizationSteps = 10;
     public float normalizationStrength = 0.5f;
     public bool showingNormalization = false;
+    public int neighbourRadius = 1;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -55,7 +56,13 @@ public class MaterialEditor : MaterialEditorAbstract {
         distortedNormalMap = new Texture2D(textureResolution, textureResolution);
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
-        planarMesh = new PlanarMesh(mesh3d, objectMap, normalizationSteps, normalizationStrength, showingNormalization);
+        planarMesh = new PlanarMesh(
+            mesh3d, 
+            objectMap, 
+            normalizationSteps, 
+            normalizationStrength, 
+            showingNormalization, 
+            neighbourRadius);
     }
 
     void OnDestroy() {

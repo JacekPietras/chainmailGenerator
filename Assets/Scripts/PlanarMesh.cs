@@ -25,12 +25,14 @@ public class PlanarMesh {
         createCleaningMesh();
     }
 
-    public PlanarMesh(Mesh mesh3d, Texture2D objectMap, int normalizationSteps, float normalizationStrength, bool showingNormalization) {
-        createPlanarMesh(mesh3d, createObjects(objectMap));
-        createCleaningMesh();
+    public PlanarMesh(Mesh mesh3d, Texture2D objectMap, int normalizationSteps, float normalizationStrength, bool showingNormalization, int neighbourRadius) {
+        this.neighbourRadius = neighbourRadius;
         this.normalizationStepMax = normalizationSteps;
         this.normalizationStrength = normalizationStrength;
         this.showingNormalization = showingNormalization;
+
+        createPlanarMesh(mesh3d, createObjects(objectMap));
+        createCleaningMesh();
         texList = new Texture2D[normalizationStepMax + 1];
     }
 
@@ -115,7 +117,6 @@ public class PlanarMesh {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
                 MeshFlat localMesh = new MeshFlat(mesh3d, neighbour, normalizationStrength);
-                List<int> usedTriangles = new List<int>();
 
                 // we will iterate through objects on current triangle
                 // and list every that contains at least part of any object
@@ -130,19 +131,19 @@ public class PlanarMesh {
                     // over every other element
                     // for (int k = 0; k < localMesh.triangles.Length; k += 3) {
                     for (int k = localMesh.triangles.Length - 3; k >= 0; k -= 3) {
-                        if (usedTriangles.Contains(k)) {
+                        if (localMesh.usedTriangles.Contains(k)) {
                             continue;
                         }
                         Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
                                                     transformedVerticles[localMesh.triangles[k + 1]],
                                                     transformedVerticles[localMesh.triangles[k + 2]]);
                         if (triangle.isOnTexture()) {
-                            usedTriangles.Add(k);
+                            localMesh.usedTriangles.Add(k);
                         }
                     }
                 }
 
-                localMesh.makeEdges(usedTriangles);                
+                localMesh.makeEdges();                
 
                 if (showingNormalization) {
                     localMesh.normalizeFlatMesh(normalizationStep);
@@ -154,7 +155,7 @@ public class PlanarMesh {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
                     Texture2D tex = createTextureForDebug();
 
-                    foreach (int k in usedTriangles) {
+                    foreach (int k in localMesh.usedTriangles) {
                         Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
                                                     transformedVerticles[localMesh.triangles[k + 1]],
                                                     transformedVerticles[localMesh.triangles[k + 2]]);

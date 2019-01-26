@@ -330,6 +330,7 @@ MonoBehaviour:
   normalizationSteps: 30
   normalizationStrength: 0.7
   showingNormalization: 1
+  neighbourRadius: 1
 --- !u!4 &915320576
 Transform:
   m_ObjectHideFlags: 0

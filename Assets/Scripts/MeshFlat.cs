@@ -12,6 +12,9 @@ public class MeshFlat {
     private bool[,] edgeConnections;
     private Vector3 crossMain;
     private Triangle2D motherTriangle;
+    public List<int> usedTriangles = new List<int>();
+
+    private bool testAllInside = true;
 
     public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength) {
         vertices = new Vector3[neighbour.verticles.Length];
@@ -26,7 +29,7 @@ public class MeshFlat {
         crossMain = getCross(0);
     }
 
-    public void makeEdges(List<int> usedTriangles) {
+    public void makeEdges() {
         edgeConnections = new bool[triangles.Length, triangles.Length];
         edges = new List<Edge>();
 
@@ -36,7 +39,7 @@ public class MeshFlat {
                 triangles[k + 1],
                 triangles[k + 2]);
         }
-        
+
         edges.Sort((x, y) => y.strength.CompareTo(x.strength));
 
         // filling edge expected length with knowledge of current 3D object
@@ -63,10 +66,9 @@ public class MeshFlat {
                             // and mark that edge as created
                             // notice that j->k is different than k->j
                             edges.Add(new Edge(indexOfNP[j], indexOfNP[k], getStrength(i)));
-
-                            Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k]+" s"+ getStrength(i));
-
                             edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
+
+                            // Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + getStrength(i));
                         }
                     }
                 }
@@ -117,7 +119,11 @@ public class MeshFlat {
             times--;
         }
         for (int i = 0; i < times; i++) {
-            separateOverLappingFaces();
+            if (testAllInside) {
+                separateOverLappingAllFaces();
+            } else {
+                separateOverLappingMotherFace();
+            }
             normalizeFlatMesh();
         }
     }
@@ -132,9 +138,12 @@ public class MeshFlat {
                      -(vertices[0] - vertices[edge.from]
                      + vertices[1] - vertices[edge.from]
                      + vertices[2] - vertices[edge.from]);
-                float currentLength = Mathf.Abs(move.magnitude);
-                float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
-                vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+              //  float currentLength = Mathf.Abs(move.magnitude);
+              //  float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
+              //  vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+
+                float moveLength = Mathf.Abs(move.magnitude);
+                vertices[edge.to] = vertices[edge.from] + move * (edge.length / moveLength);
                 separated = true;
             }
         }
@@ -142,17 +151,50 @@ public class MeshFlat {
         return separated;
     }
 
-    public void separateOverLappingFaces() {
+    public void separateOverLappingMotherFace() {
         foreach (Edge edge in edges) {
             if (motherTriangle.pointInside(vertices[edge.to])) {
-                // vector to outside of triangle
+
+                // vector to outside of mother triangle
                 Vector3 move =
-                     -(vertices[0] - vertices[edge.from]
-                     + vertices[1] - vertices[edge.from]
-                     + vertices[2] - vertices[edge.from]);
+                         -(vertices[0] - vertices[edge.from]
+                         + vertices[1] - vertices[edge.from]
+                         + vertices[2] - vertices[edge.from]);
                 float currentLength = Mathf.Abs(move.magnitude);
                 float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
                 vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+            }
+        }
+    }
+
+    public void separateOverLappingAllFaces() {
+        foreach (Edge edge in edges) {
+            foreach (int k in usedTriangles) {
+                int[] indexes = {
+                    triangles[k + 0],
+                    triangles[k + 1],
+                    triangles[k + 2]};
+
+                if (indexes[0] == edge.to ||
+                    indexes[1] == edge.to ||
+                    indexes[2] == edge.to) {
+                    continue;
+                }
+
+                Triangle2D triangle = new Triangle2D(
+                    vertices[indexes[0]],
+                    vertices[indexes[1]],
+                    vertices[indexes[2]]);
+
+                if (triangle.pointInside(vertices[edge.to])) {
+                    // vector to outside of mother triangle
+                    Vector3 move =
+                         -(vertices[0] - vertices[edge.from]
+                         + vertices[1] - vertices[edge.from]
+                         + vertices[2] - vertices[edge.from]);
+                    float moveLength = Mathf.Abs(move.magnitude);
+                    vertices[edge.to] = vertices[edge.from] + move * (edge.length / moveLength);
+                }
             }
         }
     }

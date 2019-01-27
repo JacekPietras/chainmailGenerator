@@ -25,6 +25,7 @@ public class MaterialEditor : MaterialEditorAbstract {
     public bool detectOverlappingOnAllEdges = false;
     public bool distortMother = false;
     public bool useStrength = true;
+    public bool alwaysBuildBestMesh = false;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -70,7 +71,8 @@ public class MaterialEditor : MaterialEditorAbstract {
             detectOverlappingOnAllTriangles,
             detectOverlappingOnAllEdges,
             distortMother,
-            useStrength);
+            useStrength,
+            alwaysBuildBestMesh);
     }
 
     void OnDestroy() {

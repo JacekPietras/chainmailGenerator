@@ -118,10 +118,10 @@ public class MeshFlat {
             averange += error;
         }
         averange /= errors.Count;
-        Debug.Log("edge (" + edges.Count + ") error " +
-            "min=" + min.ToString("0.00") + ", " +
-            "avg=" + averange.ToString("0.00") + ", " +
-            "max=" + max.ToString("0.00"));
+        Debug.Log("edge (" + (edges.Count + (distortMother ? 0 : 3)) + ") error " +
+            "min=" + min.ToString("0.000") + ", " +
+            "avg=" + averange.ToString("0.000") + ", " +
+            "max=" + max.ToString("0.000"));
     }
 
     private Vector3 getCross(int k) {

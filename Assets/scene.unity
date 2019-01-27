@@ -268,6 +268,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skewFactor: 0.04
+  speedFactor: 0.1
 --- !u!23 &915320573
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -324,7 +325,7 @@ MonoBehaviour:
   itemResolution: 256
   textureResolution: 512
   item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
-  objectMap: {fileID: 2800000, guid: 7ff209e9dfa59574190ad23316031eb4, type: 3}
+  objectMap: {fileID: 2800000, guid: 0966668920990524c93bf9b7a0b733ce, type: 3}
   heightShift: 0
   stampRotation: {x: -90, y: 0, z: 0}
   normalizationSteps: 20
@@ -335,6 +336,7 @@ MonoBehaviour:
   detectOverlappingOnAllEdges: 0
   distortMother: 0
   useStrength: 0
+  alwaysBuildBestMesh: 1
 --- !u!4 &915320576
 Transform:
   m_ObjectHideFlags: 0

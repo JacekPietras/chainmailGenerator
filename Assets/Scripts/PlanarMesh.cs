@@ -18,6 +18,7 @@ public class PlanarMesh {
     private bool detectOverlappingOnAllEdges = false;
     private bool distortMother = false;
     private bool useStrength = true;
+    private bool alwaysBuildBestMesh = false;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<TextureObject>[] textureObjectsOnTriangles;
@@ -39,7 +40,8 @@ public class PlanarMesh {
             bool detectOverlappingOnAllTriangles,
             bool detectOverlappingOnAllEdges,
             bool distortMother,
-            bool useStrength) {
+            bool useStrength,
+            bool alwaysBuildBestMesh) {
         this.neighbourRadius = neighbourRadius;
         this.normalizationStepMax = normalizationSteps;
         this.normalizationStrength = normalizationStrength;
@@ -48,6 +50,7 @@ public class PlanarMesh {
         this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
         this.distortMother = distortMother;
         this.useStrength = useStrength;
+        this.alwaysBuildBestMesh = alwaysBuildBestMesh;
 
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
@@ -124,9 +127,10 @@ public class PlanarMesh {
 
     // recalculate positions of planar mesh verticles
     public void updateMesh(Mesh mesh3d) {
-        if (showingNormalization && normalizationStep >= normalizationStepMax) {
-            return;
-        } else if (showingNormalization) {
+       // if (showingNormalization && normalizationStep >= normalizationStepMax) {
+       //     return;
+       // } else
+        if (showingNormalization) {
             Debug.Log("-------------- " + normalizationStep + " ----------------");
         } else {
             Debug.Log("-------------------------------------");
@@ -150,7 +154,7 @@ public class PlanarMesh {
                     useStrength,
                     textureObjectsOnTriangles[i / 3]);
 
-                if (showingNormalization || neighbour.usedTriangles == null) {
+                if (showingNormalization || neighbour.usedTriangles == null || alwaysBuildBestMesh) {
                     // calculations with selecting which triangles we should use
                     // for optimization reasons normally choosed once
 
@@ -165,7 +169,6 @@ public class PlanarMesh {
                             localMesh.normalizeFlatMesh(normalizationStepMax);
                         }
 
-                        localMesh.printError();
                     } while (!localMesh.checkForOutsiders());
 
                     neighbour.setUsedTriangles(localMesh.usedTriangles);
@@ -175,8 +178,9 @@ public class PlanarMesh {
 
                     localMesh.makeEdges();
                     localMesh.normalizeFlatMesh(normalizationStepMax);
-                    localMesh.printError();
                 }
+
+                localMesh.printError();
 
                 foreach (TextureObject obj in localMesh.objects) {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);

@@ -2,31 +2,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Triangle2D
-{
+public class Triangle2D {
     public Vector2 p1 = new Vector2(0, 0);
     public Vector2 p2 = new Vector2(0, 0);
     public Vector2 p3 = new Vector2(0, 0);
 
-    public Triangle2D(Vector2 p1, Vector2 p2, Vector2 p3)
-    {
+    public Triangle2D(Vector2 p1, Vector2 p2, Vector2 p3) {
         this.p1 = p1;
         this.p2 = p2;
         this.p3 = p3;
     }
 
-    public bool pointInside(Vector2 s)
-    {
+    public bool pointInside(Vector2 s) {
         return pointInside(s, p1, p2, p3);
     }
-    
-    public static bool pointInside(Vector2 s, Triangle2D triangle2d)
-    {
+
+    public static bool pointInside(Vector2 s, Triangle2D triangle2d) {
         return pointInside(s, triangle2d.p1, triangle2d.p2, triangle2d.p3);
     }
 
-    public static bool pointInside(Vector2 s, Vector2 a, Vector2 b, Vector2 c)
-    {
+    public static bool pointInside(Vector2 s, Vector2 a, Vector2 b, Vector2 c) {
         float as_x = s.x - a.x;
         float as_y = s.y - a.y;
 
@@ -41,8 +36,7 @@ public class Triangle2D
         return true;
     }
 
-    public Vector2[] toArray()
-    {
+    public Vector2[] toArray() {
         return new Vector2[] {
             p1,
             p2,
@@ -50,8 +44,7 @@ public class Triangle2D
         };
     }
 
-    public Vector3[] toArray3()
-    {
+    public Vector3[] toArray3() {
         return new Vector3[] {
             new Vector3 (p1.x, p1.y),
             new Vector3 (p2.x, p2.y),
@@ -59,9 +52,29 @@ public class Triangle2D
         };
     }
 
+    public bool overlaps(Triangle2D sec) {
+        return
+               intersection(p1, p2, sec.p1, sec.p2)
+            || intersection(p1, p2, sec.p2, sec.p3)
+            || intersection(p1, p2, sec.p1, sec.p3)
+            || intersection(p2, p3, sec.p1, sec.p2)
+            || intersection(p2, p3, sec.p2, sec.p3)
+            || intersection(p2, p3, sec.p1, sec.p3)
+            || intersection(p1, p3, sec.p1, sec.p2)
+            || intersection(p1, p3, sec.p2, sec.p3)
+            || intersection(p1, p3, sec.p1, sec.p3);
+    }
+
+    private bool intersection(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2) {
+        if (a1 == b1 || a2 == b2 || a1 == b2 || a2 == b1) {
+            return false;
+        } else {
+            return Triangle3D.intersection(a1, a2, b1, b2);
+        }
+    }
+
     // creates a triangle with normalized points to square x=0..1 y=0..1
-    public Triangle2D normalize()
-    {
+    public Triangle2D normalize() {
         Triangle2D a = new Triangle2D(
                            new Vector2(p1.x, p1.y),
                            new Vector2(p2.x, p2.y),
@@ -108,15 +121,13 @@ public class Triangle2D
         return a;
     }
 
-    public void applyScale(float scale)
-    {
+    public void applyScale(float scale) {
         p1 *= scale;
         p2 *= scale;
         p3 *= scale;
     }
 
-    public void applyTranslation(float Tx, float Ty)
-    {
+    public void applyTranslation(float Tx, float Ty) {
         p1.x += Tx;
         p2.x += Tx;
         p3.x += Tx;
@@ -125,15 +136,13 @@ public class Triangle2D
         p3.y += Ty;
     }
 
-    public void rotate(float angle, Vector2 center)
-    {
+    public void rotate(float angle, Vector2 center) {
         p1 = rotatePoint(p1, center, angle);
         p2 = rotatePoint(p2, center, angle);
         p3 = rotatePoint(p3, center, angle);
     }
 
-    private Vector2 rotatePoint(Vector2 pointToRotate, Vector2 centerPoint, float angleInDegrees)
-    {
+    private Vector2 rotatePoint(Vector2 pointToRotate, Vector2 centerPoint, float angleInDegrees) {
         float angleInRadians = angleInDegrees * 360 * (Mathf.PI / 180);
         float cosTheta = Mathf.Cos(angleInRadians);
         float sinTheta = Mathf.Sin(angleInRadians);
@@ -141,5 +150,9 @@ public class Triangle2D
                 (cosTheta * (pointToRotate.x - centerPoint.x) - sinTheta * (pointToRotate.y - centerPoint.y) + centerPoint.x),
                 (sinTheta * (pointToRotate.x - centerPoint.x) + cosTheta * (pointToRotate.y - centerPoint.y) + centerPoint.y)
         );
+    }
+
+    public void print(string prefix = "triangle") {
+        Debug.Log(prefix + " (" + p1.x + ", " + p1.y + ") (" + p2.x + ", " + p2.y + ") (" + p3.x + ", " + p3.y + ")");
     }
 }

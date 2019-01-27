@@ -15,7 +15,9 @@ public class PlanarMesh {
     private float normalizationStrength = 0.5f;
     private int neighbourRadius = 1;
     private bool detectOverlappingOnAllTriangles = false;
+    private bool detectOverlappingOnAllEdges = false;
     private bool distortMother = false;
+    private bool useStrength = true;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<TextureObject>[] textureObjectsOnTriangles;
@@ -35,13 +37,17 @@ public class PlanarMesh {
             bool showingNormalization,
             int neighbourRadius,
             bool detectOverlappingOnAllTriangles,
-            bool distortMother) {
+            bool detectOverlappingOnAllEdges,
+            bool distortMother,
+            bool useStrength) {
         this.neighbourRadius = neighbourRadius;
         this.normalizationStepMax = normalizationSteps;
         this.normalizationStrength = normalizationStrength;
         this.showingNormalization = showingNormalization;
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
+        this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
         this.distortMother = distortMother;
+        this.useStrength = useStrength;
 
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
@@ -118,7 +124,13 @@ public class PlanarMesh {
 
     // recalculate positions of planar mesh verticles
     public void updateMesh(Mesh mesh3d) {
-        Debug.Log("-------------------------------------");
+        if (showingNormalization && normalizationStep >= normalizationStepMax) {
+            return;
+        } else if (showingNormalization) {
+            Debug.Log("-------------- " + normalizationStep + " ----------------");
+        } else {
+            Debug.Log("-------------------------------------");
+        }
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
 
@@ -129,50 +141,48 @@ public class PlanarMesh {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
                 MeshFlat localMesh = new MeshFlat(
-                    mesh3d, 
-                    neighbour, 
-                    normalizationStrength, 
+                    mesh3d,
+                    neighbour,
+                    normalizationStrength,
                     detectOverlappingOnAllTriangles,
-                    distortMother);
+                    detectOverlappingOnAllEdges,
+                    distortMother,
+                    useStrength,
+                    textureObjectsOnTriangles[i / 3]);
 
-                // we will iterate through objects on current triangle
-                // and list every that contains at least part of any object
-                // (after only flattening, without normalization)
-                foreach (TextureObject obj in textureObjectsOnTriangles[i / 3]) {
-                    // TODO remove that sin rotation
-                    // obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
+                if (showingNormalization || neighbour.usedTriangles == null) {
+                    // calculations with selecting which triangles we should use
+                    // for optimization reasons normally choosed once
 
-                    Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
+                    localMesh.buildFirstUsedTriangles();
 
-                    // going from end to begining, because we wanna to render first element as last
-                    // over every other element
-                    // for (int k = 0; k < localMesh.triangles.Length; k += 3) {
-                    for (int k = localMesh.triangles.Length - 3; k >= 0; k -= 3) {
-                        if (localMesh.usedTriangles.Contains(k)) {
-                            continue;
+                    do {
+                        localMesh.makeEdges();
+
+                        if (showingNormalization) {
+                            localMesh.normalizeFlatMesh(normalizationStep);
+                        } else {
+                            localMesh.normalizeFlatMesh(normalizationStepMax);
                         }
-                        Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
-                                                    transformedVerticles[localMesh.triangles[k + 1]],
-                                                    transformedVerticles[localMesh.triangles[k + 2]]);
-                        if (triangle.isOnTexture()) {
-                            localMesh.usedTriangles.Add(k);
-                        }
-                    }
-                }
 
-                localMesh.makeEdges();
+                        localMesh.printError();
+                    } while (!localMesh.checkForOutsiders());
 
-                if (showingNormalization) {
-                    localMesh.normalizeFlatMesh(normalizationStep);
+                    neighbour.setUsedTriangles(localMesh.usedTriangles);
                 } else {
+                    // we know which triangles we should use, but we need to normalize them again
+                    // 3D mesh is in motion
+
+                    localMesh.makeEdges();
                     localMesh.normalizeFlatMesh(normalizationStepMax);
+                    localMesh.printError();
                 }
 
-                foreach (TextureObject obj in textureObjectsOnTriangles[i / 3]) {
+                foreach (TextureObject obj in localMesh.objects) {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
                     Texture2D tex = createTextureForDebug();
 
-                    foreach (int k in localMesh.usedTriangles) {
+                    foreach (int k in neighbour.usedTriangles) {
                         Triangle3D triangle = new Triangle3D(transformedVerticles[localMesh.triangles[k + 0]],
                                                     transformedVerticles[localMesh.triangles[k + 1]],
                                                     transformedVerticles[localMesh.triangles[k + 2]]);

@@ -13,16 +13,33 @@ public class MeshFlat {
     private Vector3 crossMain;
     private Triangle2D motherTriangle;
     public List<int> usedTriangles = new List<int>();
+    public List<TextureObject> objects;
 
     private bool detectOverlappingOnAllTriangles = true;
+    private bool detectOverlappingOnAllEdges = true;
     private bool distortMother = false;
+    private bool useStrength = true;
 
-    public MeshFlat(Mesh mesh3d, Neighbour neighbour, float normalizationStrength, bool detectOverlappingOnAllTriangles, bool distortMother) {
+    public MeshFlat(
+            Mesh mesh3d,
+            Neighbour neighbour,
+            float normalizationStrength,
+            bool detectOverlappingOnAllTriangles,
+            bool detectOverlappingOnAllEdges,
+            bool distortMother,
+            bool useStrength,
+            List<TextureObject> objects) {
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
+        this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
         this.distortMother = distortMother;
+        this.useStrength = useStrength;
+        this.objects = objects;
         vertices = new Vector3[neighbour.verticles.Length];
         for (int j = 0; j < vertices.Length; j++) {
             vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
+        }
+        if (neighbour.usedTriangles != null) {
+            usedTriangles = neighbour.usedTriangles;
         }
 
         NORMALIZATION_STRENGTH = normalizationStrength;
@@ -79,6 +96,34 @@ public class MeshFlat {
         }
     }
 
+    public void printError() {
+        List<float> errors = new List<float>();
+        if (edges.Count == 0) {
+            Debug.Log("no edges at all");
+            return;
+        }
+
+        foreach (Edge edge in edges) {
+            Vector3 move = vertices[edge.to] - vertices[edge.from];
+            errors.Add(Mathf.Abs((move.magnitude - edge.length) / edge.length));
+        }
+        float max = errors[0], min = errors[0];
+        float averange = 0;
+        foreach (float error in errors) {
+            if (error > max) {
+                max = error;
+            } else if (error < min) {
+                min = error;
+            }
+            averange += error;
+        }
+        averange /= errors.Count;
+        Debug.Log("edge (" + edges.Count + ") error " +
+            "min=" + min.ToString("0.00") + ", " +
+            "avg=" + averange.ToString("0.00") + ", " +
+            "max=" + max.ToString("0.00"));
+    }
+
     private Vector3 getCross(int k) {
         return Vector3.Cross(
             vertices[triangles[k + 1]] - vertices[triangles[k + 0]],
@@ -88,6 +133,7 @@ public class MeshFlat {
     // returns variable [0..1] that is saying how much that triangle 
     // is pararell to triangle with current object
     private float getStrength(int i) {
+        if (!useStrength) return 1;
         Vector3 cross = getCross(i);
         float strength = 1 - Vector3.Angle(crossMain, cross) / 180;
         // we need to make ones close to 1 more important 
@@ -124,11 +170,66 @@ public class MeshFlat {
         for (int i = 0; i < times; i++) {
             if (detectOverlappingOnAllTriangles) {
                 separateOverLappingAllFaces();
-            } else {
-                separateOverLappingMotherFace();
             }
-            normalizeFlatMesh();
+            if (detectOverlappingOnAllEdges) {
+                separateOverLappingAllEdges();
+            }
+            separateOverLappingMotherFace();
         }
+        normalizeFlatMesh();
+    }
+
+    public void buildFirstUsedTriangles() {
+        // we will iterate through objects on current triangle
+        // and list every that contains at least part of any object
+        // (after only flattening, without normalization)
+        foreach (TextureObject obj in objects) {
+            // TODO remove that sin rotation
+            // obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
+
+            Vector3[] transformedVerticles = getTransformedByObject(obj);
+
+            // going from end to begining, because we wanna to render first element as last
+            // over every other element
+            // for (int k = 0; k < localMesh.triangles.Length; k += 3) {
+            for (int k = triangles.Length - 3; k >= 0; k -= 3) {
+                if (usedTriangles.Contains(k)) {
+                    continue;
+                }
+                Triangle3D triangle = new Triangle3D(transformedVerticles[triangles[k + 0]],
+                                            transformedVerticles[triangles[k + 1]],
+                                            transformedVerticles[triangles[k + 2]]);
+                if (triangle.isOnTexture()) {
+                    usedTriangles.Add(k);
+                }
+            }
+        }
+    }
+
+    public bool checkForOutsiders() {
+        List<int> usedTringlesAfterNormalization = new List<int>();
+
+        foreach (TextureObject obj in objects) {
+            Vector3[] transformedVerticles = getTransformedByObject(obj);
+            foreach (int k in usedTriangles) {
+                Triangle3D triangle = new Triangle3D(transformedVerticles[triangles[k + 0]],
+                                            transformedVerticles[triangles[k + 1]],
+                                            transformedVerticles[triangles[k + 2]]);
+                if (!usedTringlesAfterNormalization.Contains(k) && triangle.isOnTexture()) {
+                    // that triangle is on texture, we should keep him
+                    usedTringlesAfterNormalization.Add(k);
+                } else {
+                    // that triangle is outside texture, we may consider removing him
+                    // but it can be used in different objects
+                }
+            }
+        }
+
+        bool same = usedTriangles.Count == usedTringlesAfterNormalization.Count;
+
+        usedTriangles = usedTringlesAfterNormalization;
+
+        return same;
     }
 
     public bool separateOverLappingVerticles() {
@@ -136,17 +237,7 @@ public class MeshFlat {
         foreach (Edge edge in edges) {
             Vector3 move = vertices[edge.to] - vertices[edge.from];
             if (move.magnitude == 0) {
-                // vector to outside of triangle
-                move =
-                     -(vertices[0] - vertices[edge.from]
-                     + vertices[1] - vertices[edge.from]
-                     + vertices[2] - vertices[edge.from]);
-              //  float currentLength = Mathf.Abs(move.magnitude);
-              //  float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
-              //  vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
-
-                float moveLength = Mathf.Abs(move.magnitude);
-                vertices[edge.to] = vertices[edge.from] + move * (edge.length / moveLength);
+                moveEndOfEdgeAway(edge);
                 separated = true;
             }
         }
@@ -157,20 +248,43 @@ public class MeshFlat {
     public void separateOverLappingMotherFace() {
         foreach (Edge edge in edges) {
             if (motherTriangle.pointInside(vertices[edge.to])) {
-
-                // vector to outside of mother triangle
-                Vector3 move =
-                         -(vertices[0] - vertices[edge.from]
-                         + vertices[1] - vertices[edge.from]
-                         + vertices[2] - vertices[edge.from]);
-                float currentLength = Mathf.Abs(move.magnitude);
-                float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
-                vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+                moveEndOfEdgeAway(edge);
             }
         }
     }
 
     public void separateOverLappingAllFaces() {
+        foreach (int k in usedTriangles) {
+            foreach (int j in usedTriangles) {
+                if (k == j) {
+                    continue;
+                }
+
+                Triangle2D triangleK = new Triangle2D(
+                    vertices[triangles[k + 0]],
+                    vertices[triangles[k + 1]],
+                    vertices[triangles[k + 2]]);
+
+                Triangle2D triangleJ = new Triangle2D(
+                    vertices[triangles[j + 0]],
+                    vertices[triangles[j + 1]],
+                    vertices[triangles[j + 2]]);
+
+                if (triangleK.overlaps(triangleJ)) {
+                    foreach (Edge edge in edges) {
+                        if (
+                               edge.to == triangles[k + 0]
+                            || edge.to == triangles[k + 1]
+                            || edge.to == triangles[k + 2]) {
+                            moveEndOfEdgeAway(edge);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void separateOverLappingAllEdges() {
         foreach (Edge edge in edges) {
             foreach (int k in usedTriangles) {
                 int[] indexes = {
@@ -190,16 +304,23 @@ public class MeshFlat {
                     vertices[indexes[2]]);
 
                 if (triangle.pointInside(vertices[edge.to])) {
-                    // vector to outside of mother triangle
-                    Vector3 move =
-                         -(vertices[0] - vertices[edge.from]
-                         + vertices[1] - vertices[edge.from]
-                         + vertices[2] - vertices[edge.from]);
-                    float moveLength = Mathf.Abs(move.magnitude);
-                    vertices[edge.to] = vertices[edge.from] + move * (edge.length / moveLength);
+                    moveEndOfEdgeAway(edge);
                 }
             }
         }
+    }
+
+    // vector to outside of mother triangle
+    private void moveEndOfEdgeAway(Edge edge) {
+        Vector3 move =
+             -(vertices[0] - vertices[edge.from]
+             + vertices[1] - vertices[edge.from]
+             + vertices[2] - vertices[edge.from]);
+
+        // float currentLength = Mathf.Abs(move.magnitude);
+        // float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
+        // vertices[edge.to] = vertices[edge.from] + move * (wantedLength / currentLength);
+        vertices[edge.to] = vertices[edge.from] + move * Mathf.Abs(edge.length / move.magnitude);
     }
 
     public void normalizeFlatMesh() {

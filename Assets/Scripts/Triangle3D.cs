@@ -103,7 +103,7 @@ public class Triangle3D {
         return intersection(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
     }
 
-    static bool intersection(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2) {
+    public static bool intersection(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2) {
         Vector2 b = a2 - a1;
         Vector2 d = b2 - b1;
         float bDotDPerp = b.x * d.y - b.y * d.x;

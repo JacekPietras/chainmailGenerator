@@ -175,8 +175,8 @@ public class MeshFlat {
                 separateOverLappingAllEdges();
             }
             separateOverLappingMotherFace();
+            normalizeFlatMesh();
         }
-        normalizeFlatMesh();
     }
 
     public void buildFirstUsedTriangles() {
@@ -230,6 +230,83 @@ public class MeshFlat {
         usedTriangles = usedTringlesAfterNormalization;
 
         return same;
+    }
+
+    public bool checkForOutsidersAndNotCommons() {
+        List<int> usedTringlesAfterNormalization = new List<int>();
+        List<int> usedTringlesWithCommon = new List<int>();
+
+        foreach (TextureObject obj in objects) {
+            Vector3[] transformedVerticles = getTransformedByObject(obj);
+            foreach (int k in usedTriangles) {
+                Triangle3D triangle = new Triangle3D(transformedVerticles[triangles[k + 0]],
+                                            transformedVerticles[triangles[k + 1]],
+                                            transformedVerticles[triangles[k + 2]]);
+                if (!usedTringlesAfterNormalization.Contains(k) && triangle.isOnTexture()) {
+                    // that triangle is on texture, we should keep him
+                    usedTringlesAfterNormalization.Add(k);
+                } else {
+                    // that triangle is outside texture, we may consider removing him
+                    // but it can be used in different objects
+                }
+            }
+        }
+
+        // looking for triangles that only one point common with any other triangle
+        foreach (int k in usedTriangles) {
+            int[] indexesK = {
+                triangles[k + 0],
+                triangles[k + 1],
+                triangles[k + 2]
+            };
+            if (haveCommonPoints(indexesK, k) || k == 0) {
+                usedTringlesWithCommon.Add(k);
+            }
+        }
+
+        bool same = usedTriangles.Count == usedTringlesWithCommon.Count;
+        if (!same) {
+            Debug.Log("checkForOutsiders " +
+                usedTriangles.Count + " " +
+                usedTringlesAfterNormalization.Count + " " +
+                usedTringlesWithCommon.Count);
+        }
+
+        usedTriangles = usedTringlesWithCommon;
+
+        return same;
+    }
+
+    private bool haveCommonPoints(int[] indexesK, int k) {
+        foreach (int j in usedTriangles) {
+            if (k == j) {
+                continue;
+            }
+
+            int[] indexesJ = {
+                    triangles[j + 0],
+                    triangles[j + 1],
+                    triangles[j + 2]
+                };
+
+            int common = commonPoints(indexesK, indexesJ);
+            if (common > 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int commonPoints(int[] indexesK, int[] indexesJ) {
+        int common = 0;
+        for (int k = 0; k < indexesK.Length; k++) {
+            for (int j = 0; j < indexesJ.Length; j++) {
+                if (indexesK[k] == indexesJ[j]) {
+                    common++;
+                }
+            }
+        }
+        return common;
     }
 
     public bool separateOverLappingVerticles() {

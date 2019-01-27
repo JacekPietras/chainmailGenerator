@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class RandomizeVerts : MonoBehaviour {
-    [Range(0.01f, 0.9f)]
+    [Range(0.01f, 0.09f)]
     public float skewFactor = 0.05f;
     [Range(0f, 2.0f)]
     public float speedFactor = 1f;

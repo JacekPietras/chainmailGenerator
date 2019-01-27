@@ -69,10 +69,15 @@ public class Triangle2D {
         if (a1 == b1 || a2 == b2 || a1 == b2 || a2 == b1) {
             return false;
         } else {
-            return Triangle3D.intersection(a1, a2, b1, b2);
+            if (Triangle3D.intersection(a1, a2, b1, b2)) {
+                // Debug.Log("intersection " + a1 + " " + a2 + " " + b1 + " " + b2);
+                return true;
+            } else {
+                return false;
+            }
         }
     }
-
+    
     // creates a triangle with normalized points to square x=0..1 y=0..1
     public Triangle2D normalize() {
         Triangle2D a = new Triangle2D(

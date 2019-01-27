@@ -62,11 +62,11 @@ public class MaterialEditor : MaterialEditorAbstract {
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
         planarMesh = new PlanarMesh(
-            mesh3d, 
-            objectMap, 
-            normalizationSteps, 
-            normalizationStrength, 
-            showingNormalization, 
+            mesh3d,
+            objectMap,
+            normalizationSteps,
+            normalizationStrength,
+            showingNormalization,
             neighbourRadius,
             detectOverlappingOnAllTriangles,
             detectOverlappingOnAllEdges,
@@ -95,15 +95,20 @@ public class MaterialEditor : MaterialEditorAbstract {
         }
         if (showingNormalization) {
             Directory.CreateDirectory(normalizationPath);
-            int i = 0;
-            foreach (Texture2D tex in planarMesh.texList) {
-                if (tex == null) continue;
-                try {
-                    System.IO.File.WriteAllBytes(normalizationPath + layerName + "_step_" + i + ".png", tex.EncodeToPNG());
-                } catch (IOException ignored) {
+            for (int j = 0; j < planarMesh.texObjectsCount; j++) {
+                for (int i = 0; i < normalizationSteps + 1; i++) {
+                    Texture2D tex = planarMesh.texList[j, i];
+                    if (tex == null) continue;
+                    String prefix = "";
+                    if (planarMesh.texObjectsCount > 1) {
+                        prefix = "_" + j;
+                    }
+                    try {
+                        System.IO.File.WriteAllBytes(normalizationPath + layerName + prefix + "_step_" + i + ".png", tex.EncodeToPNG());
+                    } catch (IOException ignored) {
 
+                    }
                 }
-                i++;
             }
         }
     }

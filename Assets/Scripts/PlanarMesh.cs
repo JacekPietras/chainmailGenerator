@@ -10,7 +10,8 @@ public class PlanarMesh {
     private int normalizationStepMax = 10;
     // debug option to draw out progress of normalization in bitmaps
     private bool showingNormalization = false;
-    public Texture2D[] texList;
+    public Texture2D[,] texList;
+    public int texObjectsCount = 0;
     private int normalizationStep = 0;
     private float normalizationStrength = 0.5f;
     private int neighbourRadius = 1;
@@ -54,7 +55,7 @@ public class PlanarMesh {
 
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
-        texList = new Texture2D[normalizationStepMax + 1];
+        texList = new Texture2D[texObjectsCount, normalizationStepMax + 1];
     }
 
     private void createCleaningMesh() {
@@ -94,6 +95,7 @@ public class PlanarMesh {
         gridVertices = new Vector3[mesh3d.triangles.Length];
         textureObjectsOnTriangles = new List<TextureObject>[mesh3d.triangles.Length / 3];
         neighbours = new Neighbour[mesh3d.triangles.Length / 3];
+        texObjectsCount = objects.Count;
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
@@ -127,9 +129,9 @@ public class PlanarMesh {
 
     // recalculate positions of planar mesh verticles
     public void updateMesh(Mesh mesh3d) {
-       // if (showingNormalization && normalizationStep >= normalizationStepMax) {
-       //     return;
-       // } else
+        // if (showingNormalization && normalizationStep >= normalizationStepMax) {
+        //     return;
+        // } else
         if (showingNormalization) {
             Debug.Log("-------------- " + normalizationStep + " ----------------");
         } else {
@@ -137,6 +139,7 @@ public class PlanarMesh {
         }
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
+        int objectIndex = 0;
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
@@ -201,7 +204,8 @@ public class PlanarMesh {
 
                         drawDebugTriangle(tex, triangle, k);
                     }
-                    applyDebugTexture(tex);
+                    applyDebugTexture(tex, objectIndex);
+                    objectIndex++;
                 }
             }
         }
@@ -239,12 +243,12 @@ public class PlanarMesh {
         return tex;
     }
 
-    private void applyDebugTexture(Texture2D tex) {
+    private void applyDebugTexture(Texture2D tex, int objectIndex) {
         if (!showingNormalization) {
             return;
         }
         tex.Apply();
-        texList[normalizationStep] = tex;
+        texList[objectIndex, normalizationStep] = tex;
     }
 
     private void drawDebugTriangle(Texture2D tex, Triangle3D tri, int color) {

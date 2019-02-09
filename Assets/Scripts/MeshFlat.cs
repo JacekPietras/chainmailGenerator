@@ -70,29 +70,46 @@ public class MeshFlat {
     }
 
     // filling list of edges that will be used to normalization of triangles
-    // list won't contain for example edges in main triangle, because we don't wanna to distort him
+    // list won't contain for example edges going to main triangle, because we don't wanna to distort him
     public void addEdges(int i, params int[] indexOfNP) {
         // we need to iterate through indexOfNP (3 elements)
         for (int k = 0; k < indexOfNP.Length; k++) {
-            // index need to be less than 3 because indexes 0,1,2 are for mother triangle
-            if (indexOfNP[k] >= 3 || distortMother) {
-                // we need to iterate through indexOfNP again
-                // but choose all point that are not current k
-                for (int j = 0; j < indexOfNP.Length; j++) {
-                    if (k != j) {
-                        // checking if that edge already exist
-                        if (!edgeConnections[indexOfNP[j], indexOfNP[k]]) {
-                            // not existing, we need to create that edge from j to k
-                            // and mark that edge as created
-                            // notice that j->k is different than k->j
-                            edges.Add(new Edge(indexOfNP[j], indexOfNP[k], getStrength(i)));
-                            edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
+            // we need to iterate through indexOfNP again
+            // but choose all point that are not current k
+            for (int j = 0; j < indexOfNP.Length; j++) {
+                if (k != j) {
+                    // checking if that edge already exist
+                    if (edgeAllowed(indexOfNP[j], indexOfNP[k])
+                        && !edgeConnections[indexOfNP[j], indexOfNP[k]]) {
+                        // not existing, we need to create that edge from j to k
+                        // and mark that edge as created
+                        // notice that j->k is different than k->j
+                        edges.Add(new Edge(indexOfNP[j], indexOfNP[k], getStrength(i)));
+                        edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
 
-                            // Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + getStrength(i));
-                        }
+                        //Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + getStrength(i));
                     }
                 }
             }
+        }
+    }
+
+    private bool edgeAllowed(int from, int to) {
+        // keep in mind that indexes 0,1,2 are for mother triangle
+        if (distortMother) {
+            // we can distort main triangle, so, we can allow any edge
+            return true;
+        } else if (to >= 3) {
+            // with that edge we are pointing out of main triangle - that's allowed
+            return true;
+        } else if (from < 3) {
+            // allowed because both points are in main triangle, 
+            // (to is also lower than 3)
+            // we need to do that because main triangle somehow not always is perfect
+            return true;
+        } else {
+            // we are pointing in main triangle from outside - forbidden
+            return false;
         }
     }
 
@@ -312,6 +329,11 @@ public class MeshFlat {
     public bool separateOverLappingVerticles() {
         bool separated = false;
         foreach (Edge edge in edges) {
+            if (edge.to < 3) {
+                // we cannot move main triangle
+                continue;
+            }
+
             Vector3 move = vertices[edge.to] - vertices[edge.from];
             if (move.magnitude == 0) {
                 moveEndOfEdgeAway(edge);
@@ -324,6 +346,10 @@ public class MeshFlat {
 
     public void separateOverLappingMotherFace() {
         foreach (Edge edge in edges) {
+            if (edge.to < 3) {
+                // we cannot move main triangle
+                continue;
+            }
             if (motherTriangle.pointInside(vertices[edge.to])) {
                 moveEndOfEdgeAway(edge);
             }
@@ -349,6 +375,11 @@ public class MeshFlat {
 
                 if (triangleK.overlaps(triangleJ)) {
                     foreach (Edge edge in edges) {
+                        if (edge.to < 3) {
+                            // we cannot move main triangle
+                            continue;
+                        }
+
                         if (
                                edge.to == triangles[k + 0]
                             || edge.to == triangles[k + 1]
@@ -363,6 +394,11 @@ public class MeshFlat {
 
     public void separateOverLappingAllEdges() {
         foreach (Edge edge in edges) {
+            if (edge.to < 3) {
+                // we cannot move main triangle
+                continue;
+            }
+
             foreach (int k in usedTriangles) {
                 int[] indexes = {
                     triangles[k + 0],

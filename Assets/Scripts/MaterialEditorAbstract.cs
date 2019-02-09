@@ -9,6 +9,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
     protected MaterialEditorAbstract higherLayer;
     protected MaterialEditorAbstract lowerLayer;
     private int runCount = -1;
+    public bool nothingAtAll = false;
 
     void Start() {
         fillLayers();
@@ -16,6 +17,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
     }
 
     void Update() {
+        nothingAtAll = !nothingAtAll;
         if (this == null) {
             Debug.Log("not attached");
             return;

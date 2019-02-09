@@ -267,7 +267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8024007c9ece29646af817372e06359f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  skewFactor: 0.05
+  skewFactor: 0.03
   speedFactor: 1
   seed: 0
 --- !u!23 &915320573
@@ -331,10 +331,10 @@ MonoBehaviour:
   stampRotation: {x: -90, y: 0, z: 0}
   normalizationSteps: 20
   normalizationStrength: 0.7
-  showingNormalization: 1
+  showingNormalization: 0
   neighbourRadius: 1
   detectOverlappingOnAllTriangles: 1
-  detectOverlappingOnAllEdges: 0
+  detectOverlappingOnAllEdges: 1
   distortMother: 0
   useStrength: 0
   alwaysBuildBestMesh: 0

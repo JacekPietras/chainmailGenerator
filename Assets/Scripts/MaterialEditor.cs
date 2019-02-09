@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using UnityEditor;
 using UnityEngine;
 
 public class MaterialEditor : MaterialEditorAbstract {
@@ -18,11 +17,11 @@ public class MaterialEditor : MaterialEditorAbstract {
     public bool heightShift = false;
     public Vector3 stampRotation = new Vector3(-90, 0, 0);
     public int normalizationSteps = 10;
-    public float normalizationStrength = 0.5f;
+    public float normalizationStrength = 0.7f;
     public bool showingNormalization = false;
     public int neighbourRadius = 1;
     public bool detectOverlappingOnAllTriangles = false;
-    public bool detectOverlappingOnAllEdges = false;
+    public bool detectOverlappingOnAllEdges = true;
     public bool distortMother = false;
     public bool useStrength = true;
     public bool alwaysBuildBestMesh = false;
@@ -76,37 +75,39 @@ public class MaterialEditor : MaterialEditorAbstract {
     }
 
     void OnDestroy() {
-        String outputPath = "Assets/OutputMaps/";
-        if (Directory.Exists(outputPath)) {
-            Directory.Delete(outputPath, true);
-        }
-        Directory.CreateDirectory(outputPath);
-        // map is also saved in asset files so we can use it in other places
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
-        System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
+        if (distortedNormalMap != null) {
+            String outputPath = "Assets/OutputMaps/";
+            if (Directory.Exists(outputPath)) {
+                Directory.Delete(outputPath, true);
+            }
+            Directory.CreateDirectory(outputPath);
+            // map is also saved in asset files so we can use it in other places
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 
-        String normalizationPath = outputPath + "Normalization/";
-        if (Directory.Exists(normalizationPath)) {
-            Directory.Delete(normalizationPath, true);
-        }
-        if (showingNormalization) {
-            Directory.CreateDirectory(normalizationPath);
-            for (int j = 0; j < planarMesh.texObjectsCount; j++) {
-                for (int i = 0; i < normalizationSteps + 1; i++) {
-                    Texture2D tex = planarMesh.texList[j, i];
-                    if (tex == null) continue;
-                    String prefix = "";
-                    if (planarMesh.texObjectsCount > 1) {
-                        prefix = "_" + j;
-                    }
-                    try {
-                        System.IO.File.WriteAllBytes(normalizationPath + layerName + prefix + "_step_" + i + ".png", tex.EncodeToPNG());
-                    } catch (IOException ignored) {
+            String normalizationPath = outputPath + "Normalization/";
+            if (Directory.Exists(normalizationPath)) {
+                Directory.Delete(normalizationPath, true);
+            }
+            if (showingNormalization) {
+                Directory.CreateDirectory(normalizationPath);
+                for (int j = 0; j < planarMesh.texObjectsCount; j++) {
+                    for (int i = 0; i < normalizationSteps + 1; i++) {
+                        Texture2D tex = planarMesh.texList[j, i];
+                        if (tex == null) continue;
+                        String prefix = "";
+                        if (planarMesh.texObjectsCount > 1) {
+                            prefix = "_" + j;
+                        }
+                        try {
+                            System.IO.File.WriteAllBytes(normalizationPath + layerName + prefix + "_step_" + i + ".png", tex.EncodeToPNG());
+                        } catch (IOException ignored) {
 
+                        }
                     }
                 }
             }

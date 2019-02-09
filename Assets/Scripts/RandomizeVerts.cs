@@ -21,9 +21,9 @@ public class RandomizeVerts : MonoBehaviour {
         }
         int i = 0;
         while (i < orginalVertices.Length) {
-            sinFactors[i].x = Random.Range(-1, 1);
-            sinFactors[i].y = Random.Range(-1, 1);
-            sinFactors[i].z = Random.Range(-1, 1);
+            sinFactors[i].x = Random.Range(-1f, 1f);
+            sinFactors[i].y = Random.Range(-1f, 1f);
+            sinFactors[i].z = Random.Range(-1f, 1f);
 
             int j = 0;
             while (j < i) {

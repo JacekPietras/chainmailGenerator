@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class PlanarMesh {
     private Mesh mesh;
@@ -183,7 +184,7 @@ public class PlanarMesh {
                     localMesh.normalizeFlatMesh(normalizationStepMax);
                 }
 
-                localMesh.printError();
+                // localMesh.printError();
 
                 foreach (TextureObject obj in localMesh.objects) {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
@@ -333,14 +334,30 @@ public class PlanarMesh {
     // returns list of texture objects on inputed texture
     // they have relative position, rotation, scale
     private List<TextureObject> createObjects(Texture2D objectMap) {
+        if (objectMap == null) {
+            List<TextureObject> objects = new List<TextureObject>();
+            for (int i = 0; i < 10; i++) {
+                TextureObject obj = new TextureObject(
+                    Random.Range(0f, 1f),
+                    Random.Range(0f, 1f),
+                    Color.white);
+                //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
+                objects.Add(obj);
+            }
+            return objects;
+        }
+
         try {
             Color color;
             List<TextureObject> objects = new List<TextureObject>();
             for (int i = 0; i < objectMap.width; i++) {
                 for (int j = 0; j < objectMap.height; j++) {
                     if ((color = objectMap.GetPixel(i, j)) != Color.black) {
-                        TextureObject obj = new TextureObject(i / (float)objectMap.width, j / (float)objectMap.height, color);
-                        Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
+                        TextureObject obj = new TextureObject(
+                            i / (float)objectMap.width,
+                            j / (float)objectMap.height,
+                            color);
+                        //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
                         objects.Add(obj);
                     }
                 }

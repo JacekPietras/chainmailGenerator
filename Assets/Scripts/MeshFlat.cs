@@ -210,7 +210,7 @@ public class MeshFlat {
             drawPositionOfTextureObject(obj, crossMain);
         }
 
-        Quaternion qAngle = Quaternion.LookRotation(crossMain);
+        Quaternion qAngle = Quaternion.Inverse(Quaternion.LookRotation(crossMain));
         for (int i = 0; i < vertices.Length; i++) {
             vertices[i] = qAngle * vertices[i];
         }

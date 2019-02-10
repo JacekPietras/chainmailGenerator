@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MaterialEditorBackground : MaterialEditorAbstract
-{
+public class MaterialEditorBackground : MaterialEditorAbstract {
     public Texture2D colorMap;
     private bool drawingOver = false;
     private Texture2D distortedColorMap;
@@ -12,29 +11,25 @@ public class MaterialEditorBackground : MaterialEditorAbstract
     private Texture2D distortedNormalMap;
     private PlanarMesh planarMesh;
     
-    public override Texture2D getColorMap()
-    {
+    public override Texture2D getColorMap() {
         if (colorMap == null && lowerLayer != null) { return lowerLayer.getColorMap(); }
         else if (distortedColorMap != null) { return distortedColorMap; }
         else { return colorMap; }
     }
 
-    public override Texture2D getHeightMap()
-    {
+    public override Texture2D getHeightMap() {
         if (distortedHeightMap != null) { return distortedHeightMap; }
         else if (lowerLayer != null) { return lowerLayer.getHeightMap(); }
         else { return null; }
     }
 
-    public override Texture2D getNormalMap()
-    {
+    public override Texture2D getNormalMap() {
         if (distortedNormalMap != null) { return distortedNormalMap; }
         else if (lowerLayer != null) { return lowerLayer.getNormalMap(); }
         else { return null; }
     }
 
-    void OnDestroy()
-    {
+    void OnDestroy() {
         // map is also saved in asset files so we can use it in other places
         if (distortedNormalMap != null)
             System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
@@ -44,30 +39,24 @@ public class MaterialEditorBackground : MaterialEditorAbstract
             System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
     }
 
-    public override void updateDistortedMap(PlanarMesh planarMesh = null)
-    {
-        if (lowerLayer != null)
-        {
+    public override void updateDistortedMap(PlanarMesh planarMesh = null) {
+        if (lowerLayer != null) {
             lowerLayer.updateDistortedMap(planarMesh);
-            if (colorMap != null)
-            {
-                if (lowerLayer.getColorMap() != null)
-                {
+            if (colorMap != null) {
+                if (lowerLayer.getColorMap() != null) {
                     if (distortedColorMap == null) { distortedColorMap = new Texture2D(lowerLayer.getColorMap().width, lowerLayer.getColorMap().height); }
                     if (planarMesh == null) { planarMesh = new PlanarMesh(); }
 
                     drawingOver = true;
                     planarMesh.renderMapOver(colorMap, distortedColorMap, lowerLayer.getColorMap(), 0, getUsedPassesCount() - 1);
                 }
-                if (lowerLayer.getHeightMap() != null)
-                {
+                if (lowerLayer.getHeightMap() != null) {
                     if (distortedHeightMap == null) { distortedHeightMap = new Texture2D(lowerLayer.getHeightMap().width, lowerLayer.getHeightMap().height); }
                     if (distortedNormalMap == null) { distortedNormalMap = new Texture2D(lowerLayer.getNormalMap().width, lowerLayer.getNormalMap().height); }
 
                     Color[] combinedHeight = getColorMapPixels();
                     Color[] lowerHeight = lowerLayer.getHeightMap().GetPixels();
-                    for (int i = 0; i < combinedHeight.Length; i++)
-                    {
+                    for (int i = 0; i < combinedHeight.Length; i++) {
                         float color = Mathf.Min(1, lowerHeight[i].r + combinedHeight[i].a);
                         combinedHeight[i] = new Color(color, color, color, 1);
                     }
@@ -81,14 +70,10 @@ public class MaterialEditorBackground : MaterialEditorAbstract
         }
     }
 
-    private Color[] getColorMapPixels()
-    {
-        try
-        {
+    private Color[] getColorMapPixels() {
+        try {
             return colorMap.GetPixels();
-        }
-        catch (Exception ignored)
-        {
+        } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
             PlanarMesh.SetTextureImporterFormat(colorMap, true);
@@ -96,8 +81,7 @@ public class MaterialEditorBackground : MaterialEditorAbstract
         }
     }
 
-    public override int getUsedPassesCount()
-    {
+    public override int getUsedPassesCount() {
         if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + (drawingOver ? 1 : 0); }
         else { return drawingOver ? 1 : 0; }
     }

@@ -14,6 +14,10 @@ public class MeshFlat {
     private Triangle2D motherTriangle;
     public List<int> usedTriangles = new List<int>();
     public List<TextureObject> objects;
+    private Transform go;
+    private Mesh mesh3d;
+    private Neighbour neighbour;
+    public float[] strengths;
 
     private bool detectOverlappingOnAllTriangles = true;
     private bool detectOverlappingOnAllEdges = true;
@@ -21,6 +25,7 @@ public class MeshFlat {
     private bool useStrength = true;
 
     public MeshFlat(
+        Transform go,
             Mesh mesh3d,
             Neighbour neighbour,
             float normalizationStrength,
@@ -33,20 +38,35 @@ public class MeshFlat {
         this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
         this.distortMother = distortMother;
         this.useStrength = useStrength;
+        this.go = go;
+        this.mesh3d = mesh3d;
         this.objects = objects;
+        this.neighbour = neighbour;
+        NORMALIZATION_STRENGTH = normalizationStrength;
+        triangles = neighbour.triangles;
+
         vertices = new Vector3[neighbour.verticles.Length];
         for (int j = 0; j < vertices.Length; j++) {
             vertices[j] = mesh3d.vertices[neighbour.verticles[j]];
         }
+        //Vector3 shift = vertices[triangles[0]];
+        //// we wanna first point to be in cross of axis XYZ
+        //for (int j = 0; j < vertices.Length; j++) {
+        //    vertices[j] = vertices[j] - shift;
+        //}
+
         if (neighbour.usedTriangles != null) {
             usedTriangles = neighbour.usedTriangles;
         }
 
-        NORMALIZATION_STRENGTH = normalizationStrength;
-        triangles = neighbour.triangles;
         rotateMesh();
 
-        crossMain = getCross(0);
+        strengths = new float[triangles.Length / 3];
+        for (int j = 0; j < triangles.Length; j += 3) {
+            strengths[j / 3] = getStrength(j);
+        }
+
+        flattenMesh();
     }
 
     public void makeEdges() {
@@ -66,7 +86,6 @@ public class MeshFlat {
         // (it's length from 3D, not flattened. But in best scenario
         // we want flattened edge to have same length as one from 3D)
         fillEdgeLength();
-        flattenMesh();
     }
 
     // filling list of edges that will be used to normalization of triangles
@@ -84,10 +103,10 @@ public class MeshFlat {
                         // not existing, we need to create that edge from j to k
                         // and mark that edge as created
                         // notice that j->k is different than k->j
-                        edges.Add(new Edge(indexOfNP[j], indexOfNP[k], getStrength(i)));
+                        edges.Add(new Edge(indexOfNP[j], indexOfNP[k], strengths[i / 3]));
                         edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
 
-                        //Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + getStrength(i));
+                        // Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + strengths[i]);
                     }
                 }
             }
@@ -143,8 +162,8 @@ public class MeshFlat {
 
     private Vector3 getCross(int k) {
         return Vector3.Cross(
-            vertices[triangles[k + 1]] - vertices[triangles[k + 0]],
-            vertices[triangles[k + 2]] - vertices[triangles[k + 0]]);
+            vertices[triangles[k + 1]] - vertices[triangles[k]],
+            vertices[triangles[k + 2]] - vertices[triangles[k]]);
     }
 
     // returns variable [0..1] that is saying how much that triangle 
@@ -157,19 +176,60 @@ public class MeshFlat {
         return strength * strength;
     }
 
+    private void drawPositionOfTextureObject(TextureObject obj, Vector3 direction) {
+        Vector3 interpolated = obj.barycentric.Interpolate(
+            mesh3d.vertices[neighbour.verticles[0]],
+            mesh3d.vertices[neighbour.verticles[1]],
+            mesh3d.vertices[neighbour.verticles[2]]);
+        float magMult = 1 / crossMain.magnitude;
+        Debug.DrawRay(Vector3.Scale((go.rotation * interpolated), go.localScale) + go.position,
+            go.rotation * crossMain * magMult / 2, Color.blue);
+    }
+
     public void rotateMesh() {
-        Vector3[] cross = new Vector3[triangles.Length / 3];
-        for (int k = 0; k < triangles.Length; k += 3) {
-            cross[k / 3] = Vector3.Cross(vertices[triangles[k + 1]] - vertices[triangles[k + 0]], vertices[triangles[k + 2]] - vertices[triangles[k + 0]]);
-        }
+        // Vector3[] cross = new Vector3[triangles.Length / 3];
+        // for (int k = 0; k < triangles.Length; k += 3) {
+        //     cross[k / 3] = getCross(k);
+        // }
+        Debug.Log("-------------------------------------");
+
+        Debug.Log("tri " +
+            vertices[triangles[0]].ToString("0.000") + " " +
+            vertices[triangles[1]].ToString("0.000") + " " +
+            vertices[triangles[2]].ToString("0.000"));
 
         //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
 
-        Quaternion qAngle = Quaternion.LookRotation(cross[0]);
+        crossMain = getCross(0);
+        Debug.Log("prev crossMain " +
+            crossMain.x.ToString("0.000") + " " +
+            crossMain.y.ToString("0.000") + " " +
+            crossMain.z.ToString("0.000"));
 
+        foreach (TextureObject obj in objects) {
+            drawPositionOfTextureObject(obj, crossMain);
+        }
+
+        Quaternion qAngle = Quaternion.LookRotation(crossMain);
         for (int i = 0; i < vertices.Length; i++) {
             vertices[i] = qAngle * vertices[i];
         }
+        crossMain = getCross(0);
+
+        Debug.Log("out " +
+            vertices[triangles[0]].ToString("0.000") + " " +
+            vertices[triangles[1]].ToString("0.000") + " " +
+            vertices[triangles[2]].ToString("0.000"));
+
+        Debug.Log("crossMain " +
+            crossMain.x.ToString("0.000") + " " +
+            crossMain.y.ToString("0.000") + " " +
+            crossMain.z.ToString("0.000"));
+    }
+
+    private bool isNotStraight(Vector3 cross) {
+        return crossMain.x > 0.001 || crossMain.y > 0.001
+            || crossMain.x < -0.001 || crossMain.y < -0.001;
     }
 
     public void flattenMesh() {
@@ -447,7 +507,12 @@ public class MeshFlat {
 
     public void fillEdgeLength() {
         foreach (Edge edge in edges) {
-            edge.length = Mathf.Abs(Vector3.Distance(vertices[edge.from], vertices[edge.to]));
+            edge.length = Mathf.Abs(Vector3.Distance(
+                mesh3d.vertices[neighbour.verticles[edge.from]],
+                mesh3d.vertices[neighbour.verticles[edge.to]]));
+
+            // Debug.Log("filing edge " + edge.from + " " + edge.to + " l:" + edge.length);
+            // edge.length = Mathf.Abs(Vector3.Distance(vertices[edge.from], vertices[edge.to]));
         }
     }
 

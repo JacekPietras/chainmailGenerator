@@ -6,9 +6,8 @@ public class NeighbourCreator {
     private Mesh mesh3d;
     private int current;
     private int neighbourRadius = 1;
-
     // list of unique verts around neighbours, values there can change after update
-    // we need to recreatethat list using triVert array
+    // we need to recreate that list using triVert array
     private List<Vector3> unique = new List<Vector3>();
     // list of shortcuts to verticles from 3D mesh, that only indexes so it shouldn't change
     // we cannot use just verticle list because they are doubled on edges because of uv and normals

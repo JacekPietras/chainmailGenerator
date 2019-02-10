@@ -3,19 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 //http://wiki.unity3d.com/index.php/Barycentric
-public struct Barycentric
-{
+public struct Barycentric {
     public float u;
     public float v;
     public float w;
-    public Barycentric(float aU, float aV, float aW)
-    {
+
+    public Barycentric(float aU, float aV, float aW) {
         u = aU;
         v = aV;
         w = aW;
     }
-    public Barycentric(Vector2 aV1, Vector2 aV2, Vector2 aV3, Vector2 aP)
-    {
+
+    public Barycentric(Vector2 aV1, Vector2 aV2, Vector2 aV3, Vector2 aP) {
         Vector2 a = aV2 - aV3, b = aV1 - aV3, c = aP - aV3;
         float aLen = a.x * a.x + a.y * a.y;
         float bLen = b.x * b.x + b.y * b.y;
@@ -28,8 +27,7 @@ public struct Barycentric
         w = 1.0f - u - v;
     }
 
-    public Barycentric(Vector3 aV1, Vector3 aV2, Vector3 aV3, Vector3 aP)
-    {
+    public Barycentric(Vector3 aV1, Vector3 aV2, Vector3 aV3, Vector3 aP) {
         Vector3 a = aV2 - aV3, b = aV1 - aV3, c = aP - aV3;
         float aLen = a.x * a.x + a.y * a.y + a.z * a.z;
         float bLen = b.x * b.x + b.y * b.y + b.z * b.z;
@@ -41,8 +39,8 @@ public struct Barycentric
         v = (bLen * ac - ab * bc) / d;
         w = 1.0f - u - v;
     }
-    public Barycentric(Vector4 aV1, Vector4 aV2, Vector4 aV3, Vector4 aP)
-    {
+
+    public Barycentric(Vector4 aV1, Vector4 aV2, Vector4 aV3, Vector4 aP) {
         Vector4 a = aV2 - aV3, b = aV1 - aV3, c = aP - aV3;
         float aLen = a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w;
         float bLen = b.x * b.x + b.y * b.y + b.z * b.z + b.w * b.w;
@@ -54,8 +52,8 @@ public struct Barycentric
         v = (bLen * ac - ab * bc) / d;
         w = 1.0f - u - v;
     }
-    public Barycentric(Color aV1, Color aV2, Color aV3, Color aP)
-    {
+
+    public Barycentric(Color aV1, Color aV2, Color aV3, Color aP) {
         Color a = aV2 - aV3, b = aV1 - aV3, c = aP - aV3;
         float aLen = a.r * a.r + a.g * a.g + a.b * a.b;
         float bLen = b.r * b.r + b.g * b.g + b.b * b.b;
@@ -68,35 +66,33 @@ public struct Barycentric
         w = 1.0f - u - v;
     }
 
-    public bool IsInside
-    {
-        get
-        {
+    public bool IsInside {
+        get {
             return (u >= 0.0f) && (u <= 1.0f) && (v >= 0.0f) && (v <= 1.0f) && (w >= 0.0f); //(w <= 1.0f)
         }
     }
-    public Vector2 Interpolate(Triangle2D tri)
-    {
+
+    public Vector2 Interpolate(Triangle2D tri) {
         return tri.p1 * u + tri.p2 * v + tri.p3 * w;
     }
-    public Vector3 Interpolate(Triangle3D tri)
-    {
+
+    public Vector3 Interpolate(Triangle3D tri) {
         return tri.p1 * u + tri.p2 * v + tri.p3 * w;
     }
-    public Vector2 Interpolate(Vector2 v1, Vector2 v2, Vector2 v3)
-    {
+
+    public Vector2 Interpolate(Vector2 v1, Vector2 v2, Vector2 v3) {
         return v1 * u + v2 * v + v3 * w;
     }
-    public Vector3 Interpolate(Vector3 v1, Vector3 v2, Vector3 v3)
-    {
+
+    public Vector3 Interpolate(Vector3 v1, Vector3 v2, Vector3 v3) {
         return v1 * u + v2 * v + v3 * w;
     }
-    public Vector4 Interpolate(Vector4 v1, Vector4 v2, Vector4 v3)
-    {
+
+    public Vector4 Interpolate(Vector4 v1, Vector4 v2, Vector4 v3) {
         return v1 * u + v2 * v + v3 * w;
     }
-    public Color Interpolate(Color v1, Color v2, Color v3)
-    {
+
+    public Color Interpolate(Color v1, Color v2, Color v3) {
         return v1 * u + v2 * v + v3 * w;
     }
 }

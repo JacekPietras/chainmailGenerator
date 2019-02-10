@@ -61,6 +61,7 @@ public class MaterialEditor : MaterialEditorAbstract {
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
         planarMesh = new PlanarMesh(
+            GetComponent<Transform>(),
             mesh3d,
             objectMap,
             normalizationSteps,
@@ -166,52 +167,4 @@ public class MaterialEditor : MaterialEditorAbstract {
     public override int getUsedPassesCount() {
         if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + 3; } else { return 3; }
     }
-
-    private Color32[] getLowerLayerColorMapPixels() {
-        try {
-            return lowerLayer.getColorMap().GetPixels32();
-        } catch (Exception ignored) {
-            Debug.LogError(ignored.Data);
-            // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getColorMap(), true);
-            return lowerLayer.getColorMap().GetPixels32();
-        }
-    }
-
-    private Color32[] getLowerLayerHeightMapPixels() {
-        try {
-            return lowerLayer.getHeightMap().GetPixels32();
-        } catch (Exception ignored) {
-            Debug.LogError(ignored.Data);
-            // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getHeightMap(), true);
-            return lowerLayer.getHeightMap().GetPixels32();
-        }
-    }
-
-    private Color32[] getLowerLayerNormalMapPixels() {
-        try {
-            return lowerLayer.getNormalMap().GetPixels32();
-        } catch (Exception ignored) {
-            Debug.LogError(ignored.Data);
-            // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getNormalMap(), true);
-            return lowerLayer.getNormalMap().GetPixels32();
-        }
-    }
-
-    private bool[] getMask() {
-        Color32[] heightCurrent = getHeightMap().GetPixels32();
-        bool[] result = new bool[heightCurrent.Length];
-
-        Color32[] heightLower = getLowerLayerHeightMapPixels();
-        if (heightLower.Length == heightCurrent.Length) {
-            for (int i = 0; i < result.Length; i++) {
-                result[i] = heightCurrent[i].r <= heightLower[i].r;
-            }
-        } else { throw new Exception("bottom layer texture is smaller"); }
-
-        return result;
-    }
-
 }

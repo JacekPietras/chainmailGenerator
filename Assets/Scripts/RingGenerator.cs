@@ -4,8 +4,7 @@ using UnityEngine;
 
 // Class helps to generate heightMap and normalMap
 // It is raytracing input 3D model to planar textures
-public class RingGenerator
-{
+public class RingGenerator {
     // resolutian of both output textures
     public int resolution = 512;
 
@@ -25,8 +24,7 @@ public class RingGenerator
     private float strengthOfGeneratedEdgeMap = -1f;
     private Vector3 rotation;
 
-    public RingGenerator(GameObject item, int resolution, Vector3 rotation)
-    {
+    public RingGenerator(GameObject item, int resolution, Vector3 rotation) {
         this.item = item;
         if (resolution > 0)
             this.resolution = resolution;
@@ -34,8 +32,7 @@ public class RingGenerator
     }
 
     // returns generated heightMap of input 3D object
-    public Texture2D getHeightMap()
-    {
+    public Texture2D getHeightMap() {
         // if texture was already generated there is no need
         // to generate it again
         if (textureHeight != null)
@@ -43,8 +40,7 @@ public class RingGenerator
 
         MeshCollider collider = item.GetComponent<MeshCollider>();
         GameObject go = null;
-        if (!collider)
-        {
+        if (!collider) {
             //Add a collider to our source object if it does not exist.
             go = GameObject.Instantiate(item, new Vector3(), Quaternion.Euler(rotation)) as GameObject;
             collider = go.AddComponent<MeshCollider>();
@@ -76,22 +72,18 @@ public class RingGenerator
 
         Vector2 stepXZ = new Vector2(bounds.size.x / maxLengthScan, bounds.size.z / maxHeightScan);
 
-        for (int zCount = 0; zCount < maxHeightScan; zCount++)
-        {
-            for (int xCount = 0; xCount < maxLengthScan; xCount++)
-            {
+        for (int zCount = 0; zCount < maxHeightScan; zCount++) {
+            for (int xCount = 0; xCount < maxLengthScan; xCount++) {
 
                 height = 0.0f;
 
-                if (collider.Raycast(ray, out hit, bounds.size.y * 3))
-                {
+                if (collider.Raycast(ray, out hit, bounds.size.y * 3)) {
                     height = (hit.point.y - bounds.min.y) * meshHeightInverse;
                 }
                 //clamp
                 if (height <= 0)
                     height = 0;
-                else
-                {
+                else {
                     presence[zCount + frame, xCount + frame] = true;
                     if (height < bottom)
                         bottom = height;
@@ -111,20 +103,15 @@ public class RingGenerator
 
         float mult = 1f / (top - bottom);
 
-        for (int zCount = 0; zCount < maxHeight; zCount++)
-        {
-            for (int xCount = 0; xCount < maxLength; xCount++)
-            {
+        for (int zCount = 0; zCount < maxHeight; zCount++) {
+            for (int xCount = 0; xCount < maxLength; xCount++) {
                 height = heights[zCount, xCount];
 
                 //clamp negative value as black color
-                if (presence[zCount, xCount])
-                {
+                if (presence[zCount, xCount]) {
                     height = (heights[zCount, xCount] - bottom) * mult;
                     textureHeight.SetPixel(zCount, xCount, new Color(height, height, height, 1));
-                }
-                else
-                {
+                } else {
                     textureHeight.SetPixel(zCount, xCount, blank);
                 }
             }
@@ -143,8 +130,7 @@ public class RingGenerator
 
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be
-    public Texture2D getNormalMap(float strength = 30)
-    {
+    public Texture2D getNormalMap(float strength = 30) {
         // if texture was already generated there is no need
         // to generate it again
         // also strength must be the same
@@ -160,12 +146,9 @@ public class RingGenerator
         normalTexture = new Texture2D(textureHeight.width, textureHeight.height, TextureFormat.ARGB32, textureHeight.mipmapCount > 1);
         Color blank = new Color(0, 0, 0, 0);
 
-        for (int y = 0; y < textureHeight.height; y++)
-        {
-            for (int x = 0; x < textureHeight.width; x++)
-            {
-                if (presence[x, y])
-                {
+        for (int y = 0; y < textureHeight.height; y++) {
+            for (int x = 0; x < textureHeight.width; x++) {
+                if (presence[x, y]) {
                     int x_1 = x - 1;
                     if (x_1 < 0)
                         x_1 = textureHeight.width - 1; // repeat the texture so use the opposit side
@@ -188,9 +171,7 @@ public class RingGenerator
                     Vector3 color = ((n + Vector3.one) * 0.5f);
 
                     normalTexture.SetPixel(x, y, new Vector4(color.x, color.y, color.z, 1));
-                }
-                else
-                {
+                } else {
                     normalTexture.SetPixel(x, y, blank);
                 }
             }
@@ -202,12 +183,9 @@ public class RingGenerator
         return normalTexture;
     }
 
-    public static void printNormalMap(Texture2D normalTexture, Texture2D textureHeight, int strength = 30)
-    {
-        for (int y = 0; y < textureHeight.height; y++)
-        {
-            for (int x = 0; x < textureHeight.width; x++)
-            {
+    public static void printNormalMap(Texture2D normalTexture, Texture2D textureHeight, int strength = 30) {
+        for (int y = 0; y < textureHeight.height; y++) {
+            for (int x = 0; x < textureHeight.width; x++) {
                 int x_1 = x - 1;
                 if (x_1 < 0)
                     x_1 = textureHeight.width - 1; // repeat the texture so use the opposit side
@@ -236,11 +214,10 @@ public class RingGenerator
         normalTexture.wrapMode = TextureWrapMode.Clamp;
         normalTexture.Apply();
     }
-    
+
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be
-    public Texture2D getEdgeMap(Color color, float strength = 30, int spray = 2)
-    {
+    public Texture2D getEdgeMap(Color color, float strength = 30, int spray = 2) {
         // if texture was already generated there is no need
         // to generate it again
         // also strength must be the same
@@ -256,17 +233,13 @@ public class RingGenerator
         edgeTexture = new Texture2D(textureHeight.width, textureHeight.height, TextureFormat.ARGB32, textureHeight.mipmapCount > 1);
         Color blank = new Color(0, 0, 0, 0);
 
-        for (int y = 0; y < textureHeight.height; y++)
-        {
-            for (int x = 0; x < textureHeight.width; x++)
-            {
-                if (presence[x, y])
-                {
+        for (int y = 0; y < textureHeight.height; y++) {
+            for (int x = 0; x < textureHeight.width; x++) {
+                if (presence[x, y]) {
                     float change = (1 - (getVariationX(x - spray, x + spray, y) + getVariationY(y - spray, y + spray, x)) / 2f * strength);
 
-                    edgeTexture.SetPixel(x, y, new Color(color.r*change, color.g * change, color.b * change, 1));
-                }
-                else { edgeTexture.SetPixel(x, y, blank); }
+                    edgeTexture.SetPixel(x, y, new Color(color.r * change, color.g * change, color.b * change, 1));
+                } else { edgeTexture.SetPixel(x, y, blank); }
             }
         }
 
@@ -276,8 +249,7 @@ public class RingGenerator
         return edgeTexture;
     }
 
-    private float getVariationX(int fromX, int toX, int y)
-    {
+    private float getVariationX(int fromX, int toX, int y) {
         if (fromX < 0) { fromX = 0; }
         if (toX >= textureHeight.width) toX = textureHeight.width - 1;
 
@@ -285,18 +257,15 @@ public class RingGenerator
         float max = min;
         float tmp;
 
-        while (fromX <= toX)
-        {
+        while (fromX <= toX) {
             tmp = heights[fromX++, y];
-            if (tmp > max) { max = tmp; }
-            else if (tmp < min) { min = tmp; }
+            if (tmp > max) { max = tmp; } else if (tmp < min) { min = tmp; }
         }
 
         return Mathf.Abs(max - min);
     }
 
-    private float getVariationY(int fromY, int toY, int x)
-    {
+    private float getVariationY(int fromY, int toY, int x) {
         if (fromY < 0) { fromY = 0; }
         if (toY >= textureHeight.height) toY = textureHeight.height - 1;
 
@@ -304,11 +273,9 @@ public class RingGenerator
         float max = min;
         float tmp;
 
-        while (fromY <= toY)
-        {
+        while (fromY <= toY) {
             tmp = heights[x, fromY++];
-            if (tmp > max) { max = tmp; }
-            else if (tmp < min) { min = tmp; }
+            if (tmp > max) { max = tmp; } else if (tmp < min) { min = tmp; }
         }
 
         return Mathf.Abs(max - min);

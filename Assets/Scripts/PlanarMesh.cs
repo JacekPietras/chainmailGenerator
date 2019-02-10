@@ -6,6 +6,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class PlanarMesh {
+    private Transform go;
     private Mesh mesh;
     private Mesh cleaningMesh;
     private int normalizationStepMax = 10;
@@ -33,6 +34,7 @@ public class PlanarMesh {
     }
 
     public PlanarMesh(
+        Transform go,
             Mesh mesh3d,
             Texture2D objectMap,
             int normalizationSteps,
@@ -53,6 +55,7 @@ public class PlanarMesh {
         this.distortMother = distortMother;
         this.useStrength = useStrength;
         this.alwaysBuildBestMesh = alwaysBuildBestMesh;
+        this.go = go;
 
         createPlanarMesh(mesh3d, createObjects(objectMap));
         createCleaningMesh();
@@ -136,7 +139,7 @@ public class PlanarMesh {
         if (showingNormalization) {
             Debug.Log("-------------- " + normalizationStep + " ----------------");
         } else {
-            Debug.Log("-------------------------------------");
+            // Debug.Log("-------------------------------------");
         }
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
@@ -149,6 +152,7 @@ public class PlanarMesh {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
                 MeshFlat localMesh = new MeshFlat(
+                    go,
                     mesh3d,
                     neighbour,
                     normalizationStrength,

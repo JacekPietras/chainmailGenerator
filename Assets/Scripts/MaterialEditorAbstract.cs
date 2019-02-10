@@ -58,6 +58,53 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
         }
     }
 
+    protected Color32[] getLowerLayerColorMapPixels() {
+        try {
+            return lowerLayer.getColorMap().GetPixels32();
+        } catch (Exception ignored) {
+            Debug.LogError(ignored.Data);
+            // use in case of error with importer.
+            PlanarMesh.SetTextureImporterFormat(lowerLayer.getColorMap(), true);
+            return lowerLayer.getColorMap().GetPixels32();
+        }
+    }
+
+    protected Color32[] getLowerLayerHeightMapPixels() {
+        try {
+            return lowerLayer.getHeightMap().GetPixels32();
+        } catch (Exception ignored) {
+            Debug.LogError(ignored.Data);
+            // use in case of error with importer.
+            PlanarMesh.SetTextureImporterFormat(lowerLayer.getHeightMap(), true);
+            return lowerLayer.getHeightMap().GetPixels32();
+        }
+    }
+
+    protected Color32[] getLowerLayerNormalMapPixels() {
+        try {
+            return lowerLayer.getNormalMap().GetPixels32();
+        } catch (Exception ignored) {
+            Debug.LogError(ignored.Data);
+            // use in case of error with importer.
+            PlanarMesh.SetTextureImporterFormat(lowerLayer.getNormalMap(), true);
+            return lowerLayer.getNormalMap().GetPixels32();
+        }
+    }
+
+    protected bool[] getMask() {
+        Color32[] heightCurrent = getHeightMap().GetPixels32();
+        bool[] result = new bool[heightCurrent.Length];
+
+        Color32[] heightLower = getLowerLayerHeightMapPixels();
+        if (heightLower.Length == heightCurrent.Length) {
+            for (int i = 0; i < result.Length; i++) {
+                result[i] = heightCurrent[i].r <= heightLower[i].r;
+            }
+        } else { throw new Exception("bottom layer texture is smaller"); }
+
+        return result;
+    }
+
     public virtual Texture2D getHeightMap() {
         if (lowerLayer != null) { return lowerLayer.getHeightMap(); } else { return null; }
     }

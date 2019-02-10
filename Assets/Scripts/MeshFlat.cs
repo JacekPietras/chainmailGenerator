@@ -121,11 +121,11 @@ public class MeshFlat {
         } else if (to >= 3) {
             // with that edge we are pointing out of main triangle - that's allowed
             return true;
-        } else if (from < 3) {
-            // allowed because both points are in main triangle, 
-            // (to is also lower than 3)
-            // we need to do that because main triangle somehow not always is perfect
-            return true;
+        //} else if (from < 3) {
+        //    // allowed because both points are in main triangle, 
+        //    // (to is also lower than 3)
+        //    // we need to do that because main triangle somehow not always is perfect
+        //    return true;
         } else {
             // we are pointing in main triangle from outside - forbidden
             return false;
@@ -191,23 +191,23 @@ public class MeshFlat {
         // for (int k = 0; k < triangles.Length; k += 3) {
         //     cross[k / 3] = getCross(k);
         // }
-        Debug.Log("-------------------------------------");
+        //Debug.Log("-------------------------------------");
 
-        Debug.Log("tri " +
-            vertices[triangles[0]].ToString("0.000") + " " +
-            vertices[triangles[1]].ToString("0.000") + " " +
-            vertices[triangles[2]].ToString("0.000"));
+        //Debug.Log("tri " +
+        //    vertices[triangles[0]].ToString("0.000") + " " +
+        //    vertices[triangles[1]].ToString("0.000") + " " +
+        //    vertices[triangles[2]].ToString("0.000"));
 
         //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
 
-        crossMain = getCross(0);
-        Debug.Log("prev crossMain " +
-            crossMain.x.ToString("0.000") + " " +
-            crossMain.y.ToString("0.000") + " " +
-            crossMain.z.ToString("0.000"));
+        //crossMain = getCross(0);
+        //Debug.Log("prev crossMain " +
+        //    crossMain.x.ToString("0.000") + " " +
+        //    crossMain.y.ToString("0.000") + " " +
+        //    crossMain.z.ToString("0.000"));
 
         foreach (TextureObject obj in objects) {
-            drawPositionOfTextureObject(obj, crossMain);
+            drawPositionOfTextureObject(obj, getCross(0));
         }
 
         Quaternion qAngle = Quaternion.Inverse(Quaternion.LookRotation(crossMain));
@@ -216,15 +216,15 @@ public class MeshFlat {
         }
         crossMain = getCross(0);
 
-        Debug.Log("out " +
-            vertices[triangles[0]].ToString("0.000") + " " +
-            vertices[triangles[1]].ToString("0.000") + " " +
-            vertices[triangles[2]].ToString("0.000"));
+        //Debug.Log("out " +
+        //    vertices[triangles[0]].ToString("0.000") + " " +
+        //    vertices[triangles[1]].ToString("0.000") + " " +
+        //    vertices[triangles[2]].ToString("0.000"));
 
-        Debug.Log("crossMain " +
-            crossMain.x.ToString("0.000") + " " +
-            crossMain.y.ToString("0.000") + " " +
-            crossMain.z.ToString("0.000"));
+        //Debug.Log("crossMain " +
+        //    crossMain.x.ToString("0.000") + " " +
+        //    crossMain.y.ToString("0.000") + " " +
+        //    crossMain.z.ToString("0.000"));
     }
 
     private bool isNotStraight(Vector3 cross) {

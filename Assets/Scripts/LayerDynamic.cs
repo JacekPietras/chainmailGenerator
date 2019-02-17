@@ -12,7 +12,6 @@ public class LayerDynamic : LayerAbstract {
     public int textureResolution = 1024;
     // 3D object that will be raytraced to textures
     public GameObject item;
-    public Texture2D objectMap;
     // additional height for layer to shift elements that are on other ones
     public bool heightShift = false;
     public Vector3 stampRotation = new Vector3(-90, 0, 0);
@@ -22,8 +21,7 @@ public class LayerDynamic : LayerAbstract {
     public int neighbourRadius = 1;
     public bool detectOverlappingOnAllTriangles = false;
     public bool detectOverlappingOnAllEdges = true;
-    public bool distortMother = false;
-    public bool useStrength = true;
+    public bool useStrength = false;
     public bool alwaysBuildBestMesh = false;
 
     private RingGenerator generator;
@@ -63,14 +61,13 @@ public class LayerDynamic : LayerAbstract {
         planarMesh = new PlanarMesh(
             GetComponent<Transform>(),
             mesh3d,
-            objectMap,
+            getArranger(),
             normalizationSteps,
             normalizationStrength,
             showingNormalization,
             neighbourRadius,
             detectOverlappingOnAllTriangles,
             detectOverlappingOnAllEdges,
-            distortMother,
             useStrength,
             alwaysBuildBestMesh);
     }
@@ -106,8 +103,8 @@ public class LayerDynamic : LayerAbstract {
                         }
                         try {
                             System.IO.File.WriteAllBytes(normalizationPath + layerName + prefix + "_step_" + i + ".png", tex.EncodeToPNG());
-                        } catch (IOException ignored) {
-
+                        } catch (IOException e) {
+                            Debug.LogError(e.Data);
                         }
                     }
                 }
@@ -171,8 +168,17 @@ public class LayerDynamic : LayerAbstract {
 
         setTextures();
     }
-    
+
     public override int getUsedPassesCountVal() {
         return 3;
+    }
+
+    private Arranger getArranger() {
+        foreach (Arranger arranger in GetComponents(typeof(Arranger))) {
+            return arranger;
+        }
+        ArrangerSpray spray = new ArrangerSpray();
+        spray.size = 0;
+        return spray;
     }
 }

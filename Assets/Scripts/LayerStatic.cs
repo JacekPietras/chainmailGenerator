@@ -70,7 +70,7 @@ public class LayerStatic : LayerAbstract {
         } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(colorMap, true);
+            DebugUtils.SetTextureImporterFormat(colorMap, true);
             return colorMap.GetPixels();
         }
     }

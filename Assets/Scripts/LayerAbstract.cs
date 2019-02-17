@@ -9,7 +9,7 @@ public abstract class LayerAbstract : MonoBehaviour {
     protected LayerAbstract higherLayer;
     protected LayerAbstract lowerLayer;
     private int runCount = -1;
-    public bool nothingAtAll = false;
+    public int nothingAtAll = 0;
 
     void Start() {
         fillLayers();
@@ -17,7 +17,8 @@ public abstract class LayerAbstract : MonoBehaviour {
     }
 
     void Update() {
-        nothingAtAll = !nothingAtAll;
+        nothingAtAll++;
+
         if (this == null) {
             Debug.Log("not attached");
             return;
@@ -64,7 +65,7 @@ public abstract class LayerAbstract : MonoBehaviour {
         } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getColorMap(), true);
+            DebugUtils.SetTextureImporterFormat(lowerLayer.getColorMap(), true);
             return lowerLayer.getColorMap().GetPixels32();
         }
     }
@@ -75,7 +76,7 @@ public abstract class LayerAbstract : MonoBehaviour {
         } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getHeightMap(), true);
+            DebugUtils.SetTextureImporterFormat(lowerLayer.getHeightMap(), true);
             return lowerLayer.getHeightMap().GetPixels32();
         }
     }
@@ -86,7 +87,7 @@ public abstract class LayerAbstract : MonoBehaviour {
         } catch (Exception ignored) {
             Debug.LogError(ignored.Data);
             // use in case of error with importer.
-            PlanarMesh.SetTextureImporterFormat(lowerLayer.getNormalMap(), true);
+            DebugUtils.SetTextureImporterFormat(lowerLayer.getNormalMap(), true);
             return lowerLayer.getNormalMap().GetPixels32();
         }
     }

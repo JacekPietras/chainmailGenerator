@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 // Read from objectTexture, point where on mesh we should create object
 public class DynamicObject {
@@ -31,9 +33,9 @@ public class DynamicObject {
         return new Vector2(x, y);
     }
 
-    public DynamicObject copyWithBarycentric(Barycentric barycentric) {
-        DynamicObject copy = new DynamicObject(this);
-        copy.barycentric = barycentric;
-        return copy;
-    }
+    //public DynamicObject copyWithBarycentric(Barycentric barycentric) {
+    //    DynamicObject copy = new DynamicObject(this);
+    //    copy.barycentric = barycentric;
+    //    return copy;
+    //}
 }

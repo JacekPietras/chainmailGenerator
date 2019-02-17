@@ -31,12 +31,10 @@ public class LocalMesh {
             float normalizationStrength,
             bool detectOverlappingOnAllTriangles,
             bool detectOverlappingOnAllEdges,
-            bool distortMother,
             bool useStrength,
             List<DynamicObject> objects) {
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
         this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
-        this.distortMother = distortMother;
         this.useStrength = useStrength;
         this.go = go;
         this.mesh3d = mesh3d;

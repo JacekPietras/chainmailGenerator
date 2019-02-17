@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class PlanarMesh {
-    private Transform go;
+    private Transform transform;
+    private Arranger arranger;
     private Mesh mesh;
     private Mesh cleaningMesh;
     private int normalizationStepMax = 10;
@@ -19,9 +19,9 @@ public class PlanarMesh {
     private int neighbourRadius = 1;
     private bool detectOverlappingOnAllTriangles = false;
     private bool detectOverlappingOnAllEdges = false;
-    private bool distortMother = false;
     private bool useStrength = true;
     private bool alwaysBuildBestMesh = false;
+    private bool lookAtAllObjects = true;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<DynamicObject>[] textureObjectsOnTriangles;
@@ -34,16 +34,15 @@ public class PlanarMesh {
     }
 
     public PlanarMesh(
-        Transform go,
+            Transform transform,
             Mesh mesh3d,
-            Texture2D objectMap,
+            Arranger arranger,
             int normalizationSteps,
             float normalizationStrength,
             bool showingNormalization,
             int neighbourRadius,
             bool detectOverlappingOnAllTriangles,
             bool detectOverlappingOnAllEdges,
-            bool distortMother,
             bool useStrength,
             bool alwaysBuildBestMesh) {
         this.neighbourRadius = neighbourRadius;
@@ -52,14 +51,13 @@ public class PlanarMesh {
         this.showingNormalization = showingNormalization;
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
         this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
-        this.distortMother = distortMother;
         this.useStrength = useStrength;
         this.alwaysBuildBestMesh = alwaysBuildBestMesh;
-        this.go = go;
+        this.transform = transform;
+        this.arranger = arranger;
 
-        createPlanarMesh(mesh3d, createObjects(objectMap));
+        createPlanarMesh(mesh3d);
         createCleaningMesh();
-        texList = new Texture2D[texObjectsCount, normalizationStepMax + 1];
     }
 
     private void createCleaningMesh() {
@@ -90,16 +88,18 @@ public class PlanarMesh {
         cleaningMesh.normals = normals;
     }
 
-    private void createPlanarMesh(Mesh mesh3d, List<DynamicObject> objects) {
+    private void createPlanarMesh(Mesh mesh3d) {
         mesh = new Mesh();
+        List<DynamicObject> objects = arranger.getObjects();
+
         Debug.Log("Triangles count " + mesh3d.triangles.Length / 3);
         Debug.Log("UV count " + mesh3d.uv.LongLength);
         Debug.Log("Vertices count " + mesh3d.vertices.Length);
 
         gridVertices = new Vector3[mesh3d.triangles.Length];
-        textureObjectsOnTriangles = new List<DynamicObject>[mesh3d.triangles.Length / 3];
         neighbours = new Neighbour[mesh3d.triangles.Length / 3];
-        texObjectsCount = objects.Count;
+        texList = new Texture2D[texObjectsCount = objects.Count, normalizationStepMax + 1];
+        textureObjectsOnTriangles = new List<DynamicObject>[mesh3d.triangles.Length / 3];
 
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
@@ -119,9 +119,65 @@ public class PlanarMesh {
             foreach (DynamicObject obj in objects) {
                 Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
                 if (a.IsInside) {
+                    obj.barycentric = a;
+
                     if (textureObjectsOnTriangles[i / 3] == null)
                         textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
-                    textureObjectsOnTriangles[i / 3].Add(obj.copyWithBarycentric(a));
+                    textureObjectsOnTriangles[i / 3].Add(obj);
+
+                    if (lookAtAllObjects && neighbours[i / 3] == null) {
+                        neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
+                    }
+                }
+            }
+
+            if (!lookAtAllObjects) {
+                neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
+            }
+        }
+        if (!lookAtAllObjects) {
+            List<DynamicObject> objectsInN;
+            for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
+                Neighbour n = neighbours[i / 3];
+                for (int j = 0; j < n.index.Length; j += 3) {
+                    objectsInN = textureObjectsOnTriangles[n.index[j] / 3];
+                    if (objectsInN != null) {
+                        foreach (DynamicObject obj in objectsInN) {
+                            n.objects.Add(obj);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void recalcTextureObjects(Mesh mesh3d) {
+        List<DynamicObject> objects;
+        // iterating through every triangle
+        for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
+            if (!lookAtAllObjects) {
+                objects = neighbours[i / 3].objects;
+                if (objects.Count > 0) {
+                    continue;
+                }
+            } else {
+                objects = arranger.getObjects();
+            }
+
+            // UV triangle from 3D model
+            Vector2 u1 = mesh3d.uv[mesh3d.triangles[i + 0]];
+            Vector2 u2 = mesh3d.uv[mesh3d.triangles[i + 1]];
+            Vector2 u3 = mesh3d.uv[mesh3d.triangles[i + 2]];
+            textureObjectsOnTriangles[i / 3] = null;
+
+            foreach (DynamicObject obj in objects) {
+                Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
+                if (a.IsInside) {
+                    obj.barycentric = a;
+
+                    if (textureObjectsOnTriangles[i / 3] == null)
+                        textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
+                    textureObjectsOnTriangles[i / 3].Add(obj);
 
                     if (neighbours[i / 3] == null) {
                         neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
@@ -131,16 +187,39 @@ public class PlanarMesh {
         }
     }
 
+    //private void updateTextureObjects(Mesh mesh3d) {
+    //    // iterating through every triangle
+    //    for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
+    //        if (textureObjectsOnTriangles[i / 3] == null) {
+    //            continue;
+    //        }
+
+    //        // UV triangle from 3D model
+    //        Vector2 u1 = mesh3d.uv[mesh3d.triangles[i + 0]];
+    //        Vector2 u2 = mesh3d.uv[mesh3d.triangles[i + 1]];
+    //        Vector2 u3 = mesh3d.uv[mesh3d.triangles[i + 2]];
+
+    //        foreach (DynamicObject obj in textureObjectsOnTriangles[i / 3]) {
+    //            obj.barycentric = new Barycentric(u1, u2, u3, obj.toVector2());
+    //        }
+    //    }
+    //}
+
     // recalculate positions of planar mesh verticles
     public void updateMesh(Mesh mesh3d) {
-        // if (showingNormalization && normalizationStep >= normalizationStepMax) {
-        //     return;
-        // } else
+        //if (showingNormalization && normalizationStep >= normalizationStepMax) {
+        //    return;
+        //} else       
         if (showingNormalization) {
             Debug.Log("-------------- " + normalizationStep + " ----------------");
         } else {
-            // Debug.Log("-------------------------------------");
+            Debug.Log("-------------------------------------");
         }
+
+        if (arranger.isDynamic()) {
+            recalcTextureObjects(mesh3d);
+        }
+
         List<Vector2> uvList = new List<Vector2>();
         List<Vector3> vertList = new List<Vector3>();
         int objectIndex = 0;
@@ -152,13 +231,12 @@ public class PlanarMesh {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
                 LocalMesh localMesh = new LocalMesh(
-                    go,
+                    transform,
                     mesh3d,
                     neighbour,
                     normalizationStrength,
                     detectOverlappingOnAllTriangles,
                     detectOverlappingOnAllEdges,
-                    distortMother,
                     useStrength,
                     textureObjectsOnTriangles[i / 3]);
 
@@ -335,62 +413,6 @@ public class PlanarMesh {
         mesh.normals = normals;
     }
 
-    // returns list of texture objects on inputed texture
-    // they have relative position, rotation, scale
-    private List<DynamicObject> createObjects(Texture2D objectMap) {
-        if (objectMap == null) {
-            List<DynamicObject> objects = new List<DynamicObject>();
-            for (int i = 0; i < 10; i++) {
-                DynamicObject obj = new DynamicObject(
-                    Random.Range(0f, 1f),
-                    Random.Range(0f, 1f),
-                    Color.white);
-                //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
-                objects.Add(obj);
-            }
-            return objects;
-        }
-
-        try {
-            Color color;
-            List<DynamicObject> objects = new List<DynamicObject>();
-            for (int i = 0; i < objectMap.width; i++) {
-                for (int j = 0; j < objectMap.height; j++) {
-                    if ((color = objectMap.GetPixel(i, j)) != Color.black) {
-                        DynamicObject obj = new DynamicObject(
-                            i / (float)objectMap.width,
-                            j / (float)objectMap.height,
-                            color);
-                        //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
-                        objects.Add(obj);
-                    }
-                }
-            }
-            return objects;
-        } catch (Exception ignored) {
-            Debug.LogError(ignored.Data);
-            // use in case of error with importer.
-            SetTextureImporterFormat(objectMap, true);
-            return createObjects(objectMap);
-        }
-    }
-
-    // Used for possible probme when texture wasn't imported successfully
-    public static void SetTextureImporterFormat(Texture2D texture, bool isReadable) {
-        if (null == texture) return;
-
-        string assetPath = AssetDatabase.GetAssetPath(texture);
-        var tImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
-        if (tImporter != null) {
-            tImporter.textureType = TextureImporterType.Default;
-
-            tImporter.isReadable = isReadable;
-
-            AssetDatabase.ImportAsset(assetPath);
-            AssetDatabase.Refresh();
-        }
-    }
-
     public void renderDistortedMap(Texture2D stamp, Texture2D output, Color background, int pass, int row) { renderDistortedMap(stamp, output, background, null, pass, row); }
 
     public void renderDistortedMap(Texture2D stamp, Texture2D output, Texture2D background, int pass, int row) { renderDistortedMap(stamp, output, Color.black, background, pass, row); }
@@ -435,8 +457,8 @@ public class PlanarMesh {
         GL.LoadPixelMatrix(0 - pass, 1, 1, 0 - row);
         if (backgroundT == null) { setMaterialByColor(backgroundC); } else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
-        //setMaterialByColor(new Color(1, 0, 0, 1));
-        //Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
+        setMaterialByColor(new Color(1, 0, 0, 1));
+        Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();

@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MeshFlat {
+public class LocalMesh {
     public float NORMALIZATION_STRENGTH = 0.8f;
     private Vector3 CENTER = new Vector3(.5f, .5f, 0);
 
     public Vector3[] vertices;
     public int[] triangles;
-    public List<Edge> edges;
+    public List<EdgeVector> edges;
     private bool[,] edgeConnections;
     private Vector3 crossMain;
     private Triangle2D motherTriangle;
     public List<int> usedTriangles = new List<int>();
-    public List<TextureObject> objects;
+    public List<DynamicObject> objects;
     private Transform go;
     private Mesh mesh3d;
     private Neighbour neighbour;
@@ -24,7 +24,7 @@ public class MeshFlat {
     private bool distortMother = false;
     private bool useStrength = true;
 
-    public MeshFlat(
+    public LocalMesh(
         Transform go,
             Mesh mesh3d,
             Neighbour neighbour,
@@ -33,7 +33,7 @@ public class MeshFlat {
             bool detectOverlappingOnAllEdges,
             bool distortMother,
             bool useStrength,
-            List<TextureObject> objects) {
+            List<DynamicObject> objects) {
         this.detectOverlappingOnAllTriangles = detectOverlappingOnAllTriangles;
         this.detectOverlappingOnAllEdges = detectOverlappingOnAllEdges;
         this.distortMother = distortMother;
@@ -71,7 +71,7 @@ public class MeshFlat {
 
     public void makeEdges() {
         edgeConnections = new bool[triangles.Length, triangles.Length];
-        edges = new List<Edge>();
+        edges = new List<EdgeVector>();
 
         foreach (int k in usedTriangles) {
             addEdges(k,
@@ -103,7 +103,7 @@ public class MeshFlat {
                         // not existing, we need to create that edge from j to k
                         // and mark that edge as created
                         // notice that j->k is different than k->j
-                        edges.Add(new Edge(indexOfNP[j], indexOfNP[k], strengths[i / 3]));
+                        edges.Add(new EdgeVector(indexOfNP[j], indexOfNP[k], strengths[i / 3]));
                         edgeConnections[indexOfNP[j], indexOfNP[k]] = true;
 
                         // Debug.Log("adding edge " + indexOfNP[j] + " " + indexOfNP[k] + " s" + strengths[i]);
@@ -121,11 +121,11 @@ public class MeshFlat {
         } else if (to >= 3) {
             // with that edge we are pointing out of main triangle - that's allowed
             return true;
-        //} else if (from < 3) {
-        //    // allowed because both points are in main triangle, 
-        //    // (to is also lower than 3)
-        //    // we need to do that because main triangle somehow not always is perfect
-        //    return true;
+            //} else if (from < 3) {
+            //    // allowed because both points are in main triangle, 
+            //    // (to is also lower than 3)
+            //    // we need to do that because main triangle somehow not always is perfect
+            //    return true;
         } else {
             // we are pointing in main triangle from outside - forbidden
             return false;
@@ -139,7 +139,7 @@ public class MeshFlat {
             return;
         }
 
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             Vector3 move = vertices[edge.to] - vertices[edge.from];
             errors.Add(Mathf.Abs((move.magnitude - edge.length) / edge.length));
         }
@@ -176,7 +176,7 @@ public class MeshFlat {
         return strength * strength;
     }
 
-    private void drawPositionOfTextureObject(TextureObject obj, Vector3 direction) {
+    private void drawPositionOfTextureObject(DynamicObject obj, Vector3 direction) {
         Vector3 interpolated = obj.barycentric.Interpolate(
             mesh3d.vertices[neighbour.verticles[0]],
             mesh3d.vertices[neighbour.verticles[1]],
@@ -187,27 +187,9 @@ public class MeshFlat {
     }
 
     public void rotateMesh() {
-        // Vector3[] cross = new Vector3[triangles.Length / 3];
-        // for (int k = 0; k < triangles.Length; k += 3) {
-        //     cross[k / 3] = getCross(k);
-        // }
-        //Debug.Log("-------------------------------------");
-
-        //Debug.Log("tri " +
-        //    vertices[triangles[0]].ToString("0.000") + " " +
-        //    vertices[triangles[1]].ToString("0.000") + " " +
-        //    vertices[triangles[2]].ToString("0.000"));
-
-        //Debug.Log("(" + p.p1.x + ", " + p.p1.y + ", " + p.p1.z + ") (" + p.p2.x + ", " + p.p2.y + ", " + p.p2.z + ") (" + p.p3.x + ", " + p.p3.y + ", " + p.p3.z + ")");
-
-        //crossMain = getCross(0);
-        //Debug.Log("prev crossMain " +
-        //    crossMain.x.ToString("0.000") + " " +
-        //    crossMain.y.ToString("0.000") + " " +
-        //    crossMain.z.ToString("0.000"));
-
-        foreach (TextureObject obj in objects) {
-            drawPositionOfTextureObject(obj, getCross(0));
+        crossMain = getCross(0);
+        foreach (DynamicObject obj in objects) {
+            drawPositionOfTextureObject(obj, crossMain);
         }
 
         Quaternion qAngle = Quaternion.Inverse(Quaternion.LookRotation(crossMain));
@@ -215,16 +197,6 @@ public class MeshFlat {
             vertices[i] = qAngle * vertices[i];
         }
         crossMain = getCross(0);
-
-        //Debug.Log("out " +
-        //    vertices[triangles[0]].ToString("0.000") + " " +
-        //    vertices[triangles[1]].ToString("0.000") + " " +
-        //    vertices[triangles[2]].ToString("0.000"));
-
-        //Debug.Log("crossMain " +
-        //    crossMain.x.ToString("0.000") + " " +
-        //    crossMain.y.ToString("0.000") + " " +
-        //    crossMain.z.ToString("0.000"));
     }
 
     private bool isNotStraight(Vector3 cross) {
@@ -260,7 +232,7 @@ public class MeshFlat {
         // we will iterate through objects on current triangle
         // and list every that contains at least part of any object
         // (after only flattening, without normalization)
-        foreach (TextureObject obj in objects) {
+        foreach (DynamicObject obj in objects) {
             // TODO remove that sin rotation
             // obj.rotation = Mathf.Sin(Time.realtimeSinceStartup);
 
@@ -286,7 +258,7 @@ public class MeshFlat {
     public bool checkForOutsiders() {
         List<int> usedTringlesAfterNormalization = new List<int>();
 
-        foreach (TextureObject obj in objects) {
+        foreach (DynamicObject obj in objects) {
             Vector3[] transformedVerticles = getTransformedByObject(obj);
             foreach (int k in usedTriangles) {
                 Triangle3D triangle = new Triangle3D(transformedVerticles[triangles[k + 0]],
@@ -313,7 +285,7 @@ public class MeshFlat {
         List<int> usedTringlesAfterNormalization = new List<int>();
         List<int> usedTringlesWithCommon = new List<int>();
 
-        foreach (TextureObject obj in objects) {
+        foreach (DynamicObject obj in objects) {
             Vector3[] transformedVerticles = getTransformedByObject(obj);
             foreach (int k in usedTriangles) {
                 Triangle3D triangle = new Triangle3D(transformedVerticles[triangles[k + 0]],
@@ -388,7 +360,7 @@ public class MeshFlat {
 
     public bool separateOverLappingVerticles() {
         bool separated = false;
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             if (edge.to < 3) {
                 // we cannot move main triangle
                 continue;
@@ -405,7 +377,7 @@ public class MeshFlat {
     }
 
     public void separateOverLappingMotherFace() {
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             if (edge.to < 3) {
                 // we cannot move main triangle
                 continue;
@@ -434,7 +406,7 @@ public class MeshFlat {
                     vertices[triangles[j + 2]]);
 
                 if (triangleK.overlaps(triangleJ)) {
-                    foreach (Edge edge in edges) {
+                    foreach (EdgeVector edge in edges) {
                         if (edge.to < 3) {
                             // we cannot move main triangle
                             continue;
@@ -453,7 +425,7 @@ public class MeshFlat {
     }
 
     public void separateOverLappingAllEdges() {
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             if (edge.to < 3) {
                 // we cannot move main triangle
                 continue;
@@ -484,7 +456,7 @@ public class MeshFlat {
     }
 
     // vector to outside of mother triangle
-    private void moveEndOfEdgeAway(Edge edge) {
+    private void moveEndOfEdgeAway(EdgeVector edge) {
         Vector3 move =
              -(vertices[0] - vertices[edge.from]
              + vertices[1] - vertices[edge.from]
@@ -497,7 +469,7 @@ public class MeshFlat {
     }
 
     public void normalizeFlatMesh() {
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             Vector3 move = vertices[edge.to] - vertices[edge.from];
             float currentLength = Mathf.Abs(move.magnitude);
             float wantedLength = currentLength + (edge.length - currentLength) * NORMALIZATION_STRENGTH * edge.strength;
@@ -506,7 +478,7 @@ public class MeshFlat {
     }
 
     public void fillEdgeLength() {
-        foreach (Edge edge in edges) {
+        foreach (EdgeVector edge in edges) {
             edge.length = Mathf.Abs(Vector3.Distance(
                 mesh3d.vertices[neighbour.verticles[edge.from]],
                 mesh3d.vertices[neighbour.verticles[edge.to]]));
@@ -522,7 +494,7 @@ public class MeshFlat {
         }
     }
 
-    public Vector3[] getTransformedByObject(TextureObject obj) {
+    public Vector3[] getTransformedByObject(DynamicObject obj) {
         // that's interpolated center of ring on planar 3d triangle
         Vector3 interpolated = obj.barycentric.Interpolate(vertices[0], vertices[1], vertices[2]);
         Vector3[] transformedVerticles = new Vector3[vertices.Length];

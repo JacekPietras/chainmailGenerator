@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Read from objectTexture, point where on mesh we should create object
-public class TextureObject {
+public class DynamicObject {
     public float x;
     public float y;
     public float rotation;
@@ -11,15 +11,15 @@ public class TextureObject {
     public float unused;
     public Barycentric barycentric;
 
-    public TextureObject(float x, float y, Color color) {
+    public DynamicObject(float x, float y, Color color) {
         this.x = x;
         this.y = y;
         this.rotation = color.r;
-        this.scale = color.g / 5;
+        this.scale = color.g / 15;
         this.unused = color.b;
     }
 
-    public TextureObject(TextureObject original) {
+    public DynamicObject(DynamicObject original) {
         this.x = original.x;
         this.y = original.y;
         this.rotation = original.rotation;
@@ -31,8 +31,8 @@ public class TextureObject {
         return new Vector2(x, y);
     }
 
-    public TextureObject copyWithBarycentric(Barycentric barycentric) {
-        TextureObject copy = new TextureObject(this);
+    public DynamicObject copyWithBarycentric(Barycentric barycentric) {
+        DynamicObject copy = new DynamicObject(this);
         copy.barycentric = barycentric;
         return copy;
     }

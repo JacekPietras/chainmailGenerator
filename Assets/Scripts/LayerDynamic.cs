@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading;
 using UnityEngine;
 
-public class MaterialEditor : MaterialEditorAbstract {
+public class LayerDynamic : LayerAbstract {
     // resolution of raytraced maps
     public int itemResolution = 512;
     // resolution of final texture for object
@@ -134,6 +134,8 @@ public class MaterialEditor : MaterialEditorAbstract {
 
         if (lowerLayer != null) {
             if (lowerLayer.getHeightMap() != null && !heightShift) {
+                // there is LayerDynamic below, we need tom merge into it looking at height of pixels
+
                 planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
 
                 // merge lower layers into distorted maps
@@ -158,13 +160,19 @@ public class MaterialEditor : MaterialEditorAbstract {
                 distortedNormalMap.Apply();
                 distortedHeightMap.SetPixels32(combinedHeight);
                 distortedHeightMap.Apply();
-            } else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2, passShift); }
-        } else { planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift); }
+            } else {
+                // there is LayerStatic below, we can just draw color over it
+                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, lowerLayer.getColorMap(), 2, passShift);
+            }
+        } else {
+            // there is nothing below, we can draw over nothing
+            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
+        }
 
         setTextures();
     }
-
-    public override int getUsedPassesCount() {
-        if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + 3; } else { return 3; }
+    
+    public override int getUsedPassesCountVal() {
+        return 3;
     }
 }

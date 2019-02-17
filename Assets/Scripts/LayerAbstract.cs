@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class MaterialEditorAbstract : MonoBehaviour {
+public abstract class LayerAbstract : MonoBehaviour {
     public String layerName;
 
-    protected MaterialEditorAbstract higherLayer;
-    protected MaterialEditorAbstract lowerLayer;
+    protected LayerAbstract higherLayer;
+    protected LayerAbstract lowerLayer;
     private int runCount = -1;
     public bool nothingAtAll = false;
 
@@ -34,7 +34,7 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
     protected void fillLayers() {
         bool foundSelf = false;
 
-        foreach (MaterialEditorAbstract ma in GetComponents(typeof(MaterialEditorAbstract))) {
+        foreach (LayerAbstract ma in GetComponents(typeof(LayerAbstract))) {
             if (ma == this) { foundSelf = true; } else {
                 if (foundSelf) {
                     Debug.Log("found higher layer " + ma.layerName + " (in " + layerName + ")");
@@ -117,9 +117,21 @@ public abstract class MaterialEditorAbstract : MonoBehaviour {
         if (lowerLayer != null) { return lowerLayer.getNormalMap(); } else { return null; }
     }
 
-    public virtual int getUsedPassesCount() {
-        if (lowerLayer != null) { return lowerLayer.getUsedPassesCount(); } else { return 0; }
+    public int getUsedPassesCount() {
+        if (lowerLayer != null) {
+            return lowerLayer.getUsedPassesCount() + getUsedPassesCountVal();
+        } else {
+            return getUsedPassesCountVal();
+        }
     }
 
-    public virtual void updateDistortedMap(PlanarMesh planarMesh = null) { if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); } }
+    public virtual int getUsedPassesCountVal() {
+        return 0;
+    }
+
+    public virtual void updateDistortedMap(PlanarMesh planarMesh = null) {
+        if (lowerLayer != null) {
+            lowerLayer.updateDistortedMap(planarMesh);
+        }
+    }
 }

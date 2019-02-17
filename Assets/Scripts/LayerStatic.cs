@@ -3,30 +3,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MaterialEditorBackground : MaterialEditorAbstract {
+public class LayerStatic : LayerAbstract {
     public Texture2D colorMap;
     private bool drawingOver = false;
     private Texture2D distortedColorMap;
     private Texture2D distortedHeightMap;
     private Texture2D distortedNormalMap;
     private PlanarMesh planarMesh;
-    
+
     public override Texture2D getColorMap() {
-        if (colorMap == null && lowerLayer != null) { return lowerLayer.getColorMap(); }
-        else if (distortedColorMap != null) { return distortedColorMap; }
-        else { return colorMap; }
+        if (colorMap == null && lowerLayer != null) { return lowerLayer.getColorMap(); } else if (distortedColorMap != null) { return distortedColorMap; } else { return colorMap; }
     }
 
     public override Texture2D getHeightMap() {
-        if (distortedHeightMap != null) { return distortedHeightMap; }
-        else if (lowerLayer != null) { return lowerLayer.getHeightMap(); }
-        else { return null; }
+        if (distortedHeightMap != null) { return distortedHeightMap; } else if (lowerLayer != null) { return lowerLayer.getHeightMap(); } else { return null; }
     }
 
     public override Texture2D getNormalMap() {
-        if (distortedNormalMap != null) { return distortedNormalMap; }
-        else if (lowerLayer != null) { return lowerLayer.getNormalMap(); }
-        else { return null; }
+        if (distortedNormalMap != null) { return distortedNormalMap; } else if (lowerLayer != null) { return lowerLayer.getNormalMap(); } else { return null; }
     }
 
     void OnDestroy() {
@@ -80,9 +74,8 @@ public class MaterialEditorBackground : MaterialEditorAbstract {
             return colorMap.GetPixels();
         }
     }
-
-    public override int getUsedPassesCount() {
-        if (lowerLayer != null) { return lowerLayer.getUsedPassesCount() + (drawingOver ? 1 : 0); }
-        else { return drawingOver ? 1 : 0; }
+    
+    public override int getUsedPassesCountVal() {
+        return drawingOver ? 1 : 0;
     }
 }

@@ -17,7 +17,7 @@ public class RandomizeVerts : MonoBehaviour {
         orginalVertices = (Vector3[])mesh.vertices.Clone();
         sinFactors = new Vector3[orginalVertices.Length];
         if (seed > 0) {
-            Random.seed = (int)seed * 10000;
+            Random.InitState((int)seed * 10000);
         }
         int i = 0;
         while (i < orginalVertices.Length) {

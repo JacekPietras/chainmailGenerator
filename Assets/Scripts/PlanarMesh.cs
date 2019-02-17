@@ -24,7 +24,7 @@ public class PlanarMesh {
     private bool alwaysBuildBestMesh = false;
 
     // lists of information corresponding every 3D triangle from source 3D object
-    private List<TextureObject>[] textureObjectsOnTriangles;
+    private List<DynamicObject>[] textureObjectsOnTriangles;
     // for every point from mesh3d.triangles assigns 
     private Vector3[] gridVertices;
     private Neighbour[] neighbours;
@@ -90,14 +90,14 @@ public class PlanarMesh {
         cleaningMesh.normals = normals;
     }
 
-    private void createPlanarMesh(Mesh mesh3d, List<TextureObject> objects) {
+    private void createPlanarMesh(Mesh mesh3d, List<DynamicObject> objects) {
         mesh = new Mesh();
         Debug.Log("Triangles count " + mesh3d.triangles.Length / 3);
         Debug.Log("UV count " + mesh3d.uv.LongLength);
         Debug.Log("Vertices count " + mesh3d.vertices.Length);
 
         gridVertices = new Vector3[mesh3d.triangles.Length];
-        textureObjectsOnTriangles = new List<TextureObject>[mesh3d.triangles.Length / 3];
+        textureObjectsOnTriangles = new List<DynamicObject>[mesh3d.triangles.Length / 3];
         neighbours = new Neighbour[mesh3d.triangles.Length / 3];
         texObjectsCount = objects.Count;
 
@@ -116,11 +116,11 @@ public class PlanarMesh {
             gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
             gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
 
-            foreach (TextureObject obj in objects) {
+            foreach (DynamicObject obj in objects) {
                 Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
                 if (a.IsInside) {
                     if (textureObjectsOnTriangles[i / 3] == null)
-                        textureObjectsOnTriangles[i / 3] = new List<TextureObject>();
+                        textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
                     textureObjectsOnTriangles[i / 3].Add(obj.copyWithBarycentric(a));
 
                     if (neighbours[i / 3] == null) {
@@ -151,7 +151,7 @@ public class PlanarMesh {
             if (textureObjectsOnTriangles[i / 3] != null) {
                 Neighbour neighbour = neighbours[i / 3];
                 // mesh of triangle with his neighbours
-                MeshFlat localMesh = new MeshFlat(
+                LocalMesh localMesh = new LocalMesh(
                     go,
                     mesh3d,
                     neighbour,
@@ -190,7 +190,7 @@ public class PlanarMesh {
 
                 // localMesh.printError();
 
-                foreach (TextureObject obj in localMesh.objects) {
+                foreach (DynamicObject obj in localMesh.objects) {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);
                     Texture2D tex = createTextureForDebug();
 
@@ -337,11 +337,11 @@ public class PlanarMesh {
 
     // returns list of texture objects on inputed texture
     // they have relative position, rotation, scale
-    private List<TextureObject> createObjects(Texture2D objectMap) {
+    private List<DynamicObject> createObjects(Texture2D objectMap) {
         if (objectMap == null) {
-            List<TextureObject> objects = new List<TextureObject>();
+            List<DynamicObject> objects = new List<DynamicObject>();
             for (int i = 0; i < 10; i++) {
-                TextureObject obj = new TextureObject(
+                DynamicObject obj = new DynamicObject(
                     Random.Range(0f, 1f),
                     Random.Range(0f, 1f),
                     Color.white);
@@ -353,11 +353,11 @@ public class PlanarMesh {
 
         try {
             Color color;
-            List<TextureObject> objects = new List<TextureObject>();
+            List<DynamicObject> objects = new List<DynamicObject>();
             for (int i = 0; i < objectMap.width; i++) {
                 for (int j = 0; j < objectMap.height; j++) {
                     if ((color = objectMap.GetPixel(i, j)) != Color.black) {
-                        TextureObject obj = new TextureObject(
+                        DynamicObject obj = new DynamicObject(
                             i / (float)objectMap.width,
                             j / (float)objectMap.height,
                             color);
@@ -435,8 +435,8 @@ public class PlanarMesh {
         GL.LoadPixelMatrix(0 - pass, 1, 1, 0 - row);
         if (backgroundT == null) { setMaterialByColor(backgroundC); } else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
-        setMaterialByColor(new Color(1, 0, 0, 1));
-        Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
+        //setMaterialByColor(new Color(1, 0, 0, 1));
+        //Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();

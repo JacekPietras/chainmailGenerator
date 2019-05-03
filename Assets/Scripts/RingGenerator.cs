@@ -14,6 +14,7 @@ public class RingGenerator {
     // generated textures
     private Texture2D textureHeight;
     private Texture2D normalTexture;
+    private Texture2D normalTextureFromHeight;
     private Texture2D edgeTexture;
     // generated 2D array of raytraced height
     // we don't using generated heightMap because
@@ -128,14 +129,84 @@ public class RingGenerator {
         return textureHeight;
     }
 
+    // returns generated heightMap of input 3D object
+    public Texture2D getNormalMap() {
+        // if texture was already generated there is no need
+        // to generate it again
+        if (normalTexture != null)
+            return normalTexture;
+
+        MeshCollider collider = item.GetComponent<MeshCollider>();
+        GameObject go = null;
+        if (!collider) {
+            //Add a collider to our source object if it does not exist.
+            go = GameObject.Instantiate(item, new Vector3(), Quaternion.Euler(rotation)) as GameObject;
+            collider = go.AddComponent<MeshCollider>();
+        }
+        Bounds bounds = collider.bounds;
+        normalTexture = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
+
+        // Do raycasting samples over the object to see what terrain heights should be
+        Ray ray = new Ray(new Vector3(bounds.min.x, bounds.max.y + bounds.size.y, bounds.min.z), -Vector3.up);
+        RaycastHit hit = new RaycastHit();
+        Vector3 rayOrigin = ray.origin;
+        Color blank = new Color(0, 0, 0, 0);
+
+        // there is frame because we wanna to have empty line outside object
+        int frame = 2;
+        int maxHeightScan = resolution - frame * 2;
+        int maxLengthScan = resolution - frame * 2;
+
+        Vector2 stepXZ = new Vector2(bounds.size.x / maxLengthScan, bounds.size.z / maxHeightScan);
+
+        // filling with blank color first
+        for (int zCount = 0; zCount < resolution; zCount++) {
+            for (int xCount = 0; xCount < resolution; xCount++) {
+                normalTexture.SetPixel(zCount, xCount, blank);
+            }
+        }
+
+        // scaning to normal vectors
+        for (int zCount = 0; zCount < maxHeightScan; zCount++) {
+            for (int xCount = 0; xCount < maxLengthScan; xCount++) {
+                if (collider.Raycast(ray, out hit, bounds.size.y * 3)) {
+                    normalTexture.SetPixel(zCount + frame, xCount + frame,
+                        new Color(
+                            -hit.normal.x / 2 + 0.5f,
+                            -hit.normal.z / 2 + 0.5f,
+                            hit.normal.y / 2 + 0.5f,
+                            1));
+                }
+
+                rayOrigin.x += stepXZ[0];
+                ray.origin = rayOrigin;
+            }
+
+            rayOrigin.z += stepXZ[1];
+            rayOrigin.x = bounds.min.x;
+            ray.origin = rayOrigin;
+        }
+
+        normalTexture.wrapMode = TextureWrapMode.Clamp;
+
+        // Actually apply all 'setPixel' changes
+        normalTexture.Apply();
+
+        // objct was created only for raycasting, we don't need it now
+        if (go != null)
+            GameObject.Destroy(go);
+
+        return normalTexture;
+    }
+
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be
-    public Texture2D getNormalMap(float strength = 30) {
+    public Texture2D getNormalMapFromHeight(float strength = 30) {
         // if texture was already generated there is no need
         // to generate it again
         // also strength must be the same
-        if (normalTexture != null && strengthOfGeneratedNormalMap == strength)
-            return normalTexture;
+        if (normalTextureFromHeight != null && strengthOfGeneratedNormalMap == strength)
+            return normalTextureFromHeight;
         else
             strengthOfGeneratedNormalMap = strength;
 
@@ -143,7 +214,7 @@ public class RingGenerator {
         if (textureHeight == null)
             getHeightMap();
 
-        normalTexture = new Texture2D(textureHeight.width, textureHeight.height, TextureFormat.ARGB32, textureHeight.mipmapCount > 1);
+        normalTextureFromHeight = new Texture2D(textureHeight.width, textureHeight.height, TextureFormat.ARGB32, textureHeight.mipmapCount > 1);
         Color blank = new Color(0, 0, 0, 0);
 
         for (int y = 0; y < textureHeight.height; y++) {
@@ -170,17 +241,17 @@ public class RingGenerator {
                     Vector3 n = Vector3.Cross(vy, vx).normalized;
                     Vector3 color = ((n + Vector3.one) * 0.5f);
 
-                    normalTexture.SetPixel(x, y, new Vector4(color.x, color.y, color.z, 1));
+                    normalTextureFromHeight.SetPixel(x, y, new Vector4(color.x, color.y, color.z, 1));
                 } else {
-                    normalTexture.SetPixel(x, y, blank);
+                    normalTextureFromHeight.SetPixel(x, y, blank);
                 }
             }
         }
 
-        normalTexture.wrapMode = TextureWrapMode.Clamp;
-        normalTexture.Apply();
+        normalTextureFromHeight.wrapMode = TextureWrapMode.Clamp;
+        normalTextureFromHeight.Apply();
 
-        return normalTexture;
+        return normalTextureFromHeight;
     }
 
     public static void printNormalMap(Texture2D normalTexture, Texture2D textureHeight, int strength = 30) {

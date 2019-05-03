@@ -29,6 +29,7 @@ public class LayerDynamic : LayerAbstract {
 
     private Texture2D heightMap;
     private Texture2D normalMap;
+    private Texture2D normalMapFromHeight;
     private Texture2D edgeMap;
     private Texture2D distortedColorMap;
     private Texture2D distortedHeightMap;
@@ -51,6 +52,7 @@ public class LayerDynamic : LayerAbstract {
         // raytracing stamp textures from 3D object
         heightMap = generator.getHeightMap();
         normalMap = generator.getNormalMap();
+        normalMapFromHeight = generator.getNormalMapFromHeight();
         edgeMap = generator.getEdgeMap(new Color(.7f, .7f, .72f, 1), 15, 3);
 
         // creation of resusable textures that will be used on model
@@ -84,6 +86,7 @@ public class LayerDynamic : LayerAbstract {
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMapFromHeight.png", normalMapFromHeight.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 

@@ -12,6 +12,7 @@ public class DynamicObject {
     public float scale;
     public float unused;
     public Barycentric barycentric;
+    public bool assigned;
 
     public DynamicObject(float x, float y, Color color) {
         this.x = x;

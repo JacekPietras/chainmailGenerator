@@ -27,6 +27,7 @@ public class ArrangerTexture : Arranger {
                     }
                 }
             }
+            Debug.Log("Found "+objects.Count+" objects");
             return objects;
         } catch (Exception e) {
             Debug.LogError(e.Data);

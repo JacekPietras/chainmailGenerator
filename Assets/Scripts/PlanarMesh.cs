@@ -88,10 +88,54 @@ public class PlanarMesh {
         cleaningMesh.triangles = triangles;
         cleaningMesh.normals = normals;
     }
+    
+    private int assignObjects(
+            Mesh mesh3d,
+            List<DynamicObject> objects,
+            Vector2 u1,
+            Vector2 u2,
+            Vector2 u3,
+            int i,
+            bool lookAtAllObjects = true) {
+        int found = 0;
+        foreach (DynamicObject obj in objects) {
+            if(obj.assigned) {
+                continue;
+            }
+
+            Vector2 point = obj.toVector2();
+            Barycentric a = new Barycentric(u1, u2, u3, point);
+            if (a.IsInside) {
+                //if (a.u == 0 || a.v == 0 || a.w == 0 || a.u == 1 || a.v == 1) {
+                //    if (u1 == point || u2 == point || u3 == point || point.x == 0.5 || point.y == 0.5) { } else
+                //        Debug.Log("Found object (" + u1.x + ", " + u1.y + " / "
+                //            + u2.x + ", " + u2.y + " / "
+                //            + u3.x + ", " + u3.y + " - "
+                //            + point.x + ", " + point.y + ")");
+                //}
+                obj.barycentric = a;
+                obj.assigned = true;
+
+                if (textureObjectsOnTriangles[i / 3] == null)
+                    textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
+                textureObjectsOnTriangles[i / 3].Add(obj);
+                found++;
+
+                if (lookAtAllObjects && neighbours[i / 3] == null) {
+                    neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
+                }
+            }
+        }
+
+        return found;
+    }
 
     private void createPlanarMesh(Mesh mesh3d) {
         mesh = new Mesh();
         List<DynamicObject> objects = arranger.getObjects();
+        foreach (DynamicObject obj in objects) {
+            obj.assigned = false;
+        }
 
         Debug.Log("Triangles count " + mesh3d.triangles.Length / 3);
         Debug.Log("UV count " + mesh3d.uv.LongLength);
@@ -101,7 +145,7 @@ public class PlanarMesh {
         neighbours = new Neighbour[mesh3d.triangles.Length / 3];
         texList = new Texture2D[texObjectsCount = objects.Count, normalizationStepMax + 1];
         textureObjectsOnTriangles = new List<DynamicObject>[mesh3d.triangles.Length / 3];
-
+        int found = 0;
         // iterating through every triangle
         for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
             // UV triangle from 3D model
@@ -117,25 +161,13 @@ public class PlanarMesh {
             gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
             gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
 
-            foreach (DynamicObject obj in objects) {
-                Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
-                if (a.IsInside) {
-                    obj.barycentric = a;
-
-                    if (textureObjectsOnTriangles[i / 3] == null)
-                        textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
-                    textureObjectsOnTriangles[i / 3].Add(obj);
-
-                    if (lookAtAllObjects && neighbours[i / 3] == null) {
-                        neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
-                    }
-                }
-            }
+            found+= assignObjects(mesh3d, objects, u1, u2, u3, i, lookAtAllObjects);
 
             if (!lookAtAllObjects) {
                 neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
             }
         }
+        Debug.Log("assigned " + found + " object");
         if (!lookAtAllObjects) {
             List<DynamicObject> objectsInN;
             for (int i = 0; i < mesh3d.triangles.Length; i += 3) {
@@ -163,6 +195,9 @@ public class PlanarMesh {
                 }
             } else {
                 objects = arranger.getObjects();
+                foreach(DynamicObject obj in objects) {
+                    obj.assigned = false;
+                }
             }
 
             // UV triangle from 3D model
@@ -171,20 +206,7 @@ public class PlanarMesh {
             Vector2 u3 = mesh3d.uv[mesh3d.triangles[i + 2]];
             textureObjectsOnTriangles[i / 3] = null;
 
-            foreach (DynamicObject obj in objects) {
-                Barycentric a = new Barycentric(u1, u2, u3, obj.toVector2());
-                if (a.IsInside) {
-                    obj.barycentric = a;
-
-                    if (textureObjectsOnTriangles[i / 3] == null)
-                        textureObjectsOnTriangles[i / 3] = new List<DynamicObject>();
-                    textureObjectsOnTriangles[i / 3].Add(obj);
-
-                    if (neighbours[i / 3] == null) {
-                        neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
-                    }
-                }
-            }
+            assignObjects(mesh3d, objects, u1, u2, u3, i);
         }
     }
 

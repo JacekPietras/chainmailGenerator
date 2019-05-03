@@ -22,6 +22,7 @@ public class PlanarMesh {
     private bool useStrength = true;
     private bool alwaysBuildBestMesh = false;
     private bool lookAtAllObjects = true;
+    public bool DEBUG_TRIANGLES = false;
 
     // lists of information corresponding every 3D triangle from source 3D object
     private List<DynamicObject>[] textureObjectsOnTriangles;
@@ -457,7 +458,10 @@ public class PlanarMesh {
         GL.LoadPixelMatrix(0 - pass, 1, 1, 0 - row);
         if (backgroundT == null) { setMaterialByColor(backgroundC); } else { setMaterialByTexture(backgroundT); }
         Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
-        setMaterialByColor(new Color(1, 0, 0, 1));
+        if (DEBUG_TRIANGLES)
+            setMaterialByColor(new Color(1, 0, 0, 1));
+        else
+            setMaterialByColor(backgroundC);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);

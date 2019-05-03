@@ -23,6 +23,7 @@ public class LayerDynamic : LayerAbstract {
     public bool detectOverlappingOnAllEdges = true;
     public bool useStrength = false;
     public bool alwaysBuildBestMesh = false;
+    public bool DEBUG_TRIANGLES = false;
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
@@ -123,6 +124,7 @@ public class LayerDynamic : LayerAbstract {
         }
         if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); }
         int passShift = getUsedPassesCount() - 3;
+        planarMesh.DEBUG_TRIANGLES = DEBUG_TRIANGLES;
 
         if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null) {
             planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0, passShift);

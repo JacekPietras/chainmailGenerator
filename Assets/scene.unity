@@ -143,7 +143,7 @@ MonoBehaviour:
   layerName: capsule
   nothingAtAll: 0
   itemResolution: 512
-  textureResolution: 1024
+  textureResolution: 2048
   item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
   heightShift: 0
   stampRotation: {x: -45, y: 0, z: 0}
@@ -233,7 +233,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 178604f3604b00242a25b93d9af6f0a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: 10
+  sizeX: 10
+  sizeY: 10
+  shifted: 0
 --- !u!136 &1083529502
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -258,9 +260,11 @@ GameObject:
   - component: {fileID: 1689695634}
   - component: {fileID: 1689695633}
   - component: {fileID: 1689695631}
+  - component: {fileID: 1689695638}
   - component: {fileID: 1689695637}
   - component: {fileID: 1689695636}
-  - component: {fileID: 1689695630}
+  - component: {fileID: 1689695632}
+  - component: {fileID: 1689695639}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
@@ -268,18 +272,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1689695630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1689695629}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 178604f3604b00242a25b93d9af6f0a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  size: 11
 --- !u!114 &1689695631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -291,13 +283,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 280b2df9a3ddb2d459921b07573dcc14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layerName: Plane
+  layerName: NotShifted
   nothingAtAll: 0
   itemResolution: 512
   textureResolution: 1024
   item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
   heightShift: 0
-  stampRotation: {x: -90, y: 0, z: 0}
+  stampRotation: {x: -35, y: -90, z: 90}
   normalizationSteps: 10
   normalizationStrength: 0.7
   showingNormalization: 0
@@ -307,6 +299,20 @@ MonoBehaviour:
   useStrength: 0
   alwaysBuildBestMesh: 0
   DEBUG_TRIANGLES: 0
+--- !u!114 &1689695632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1689695629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 178604f3604b00242a25b93d9af6f0a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sizeX: 20
+  sizeY: 24
+  shifted: 0.5
 --- !u!64 &1689695633
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -335,7 +341,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1689695629}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 0, y: 3.69, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -653,6 +659,47 @@ SkinnedMeshRenderer:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 5, y: 0, z: 5}
   m_DirtyAABB: 0
+--- !u!114 &1689695638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1689695629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 280b2df9a3ddb2d459921b07573dcc14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  layerName: Shifted
+  nothingAtAll: 0
+  itemResolution: 512
+  textureResolution: 1024
+  item: {fileID: 100000, guid: 82d40921f8621454ea5124068f24f271, type: 3}
+  heightShift: 0
+  stampRotation: {x: -35, y: 90, z: -90}
+  normalizationSteps: 10
+  normalizationStrength: 0.7
+  showingNormalization: 0
+  neighbourRadius: 1
+  detectOverlappingOnAllTriangles: 0
+  detectOverlappingOnAllEdges: 0
+  useStrength: 0
+  alwaysBuildBestMesh: 0
+  DEBUG_TRIANGLES: 0
+--- !u!114 &1689695639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1689695629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 178604f3604b00242a25b93d9af6f0a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sizeX: 20
+  sizeY: 24
+  shifted: 1
 --- !u!1 &1909493974
 GameObject:
   m_ObjectHideFlags: 0

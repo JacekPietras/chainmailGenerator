@@ -18,7 +18,7 @@ public class DynamicObject {
         this.x = x;
         this.y = y;
         this.rotation = color.r;
-        this.scale = color.g / 5;
+        this.scale = color.g / 2;
         this.unused = color.b;
     }
 

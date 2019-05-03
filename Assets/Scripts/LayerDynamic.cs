@@ -27,6 +27,7 @@ public class LayerDynamic : LayerAbstract {
 
     private RingGenerator generator;
     private PlanarMesh planarMesh;
+    private bool multipleArrangers;
 
     private Texture2D heightMap;
     private Texture2D normalMap;
@@ -78,7 +79,7 @@ public class LayerDynamic : LayerAbstract {
     void OnDestroy() {
         if (distortedNormalMap != null) {
             String outputPath = "Assets/OutputMaps/";
-            if (Directory.Exists(outputPath)) {
+            if (Directory.Exists(outputPath) && lowerLayer == null) {
                 Directory.Delete(outputPath, true);
             }
             Directory.CreateDirectory(outputPath);
@@ -113,10 +114,15 @@ public class LayerDynamic : LayerAbstract {
                     }
                 }
             }
+        } else {
+            Debug.Log("no maps for " + layerName);
         }
     }
 
     public override void updateDistortedMap(PlanarMesh planarMesh = null) {
+        if (multipleArrangers) {
+            planarMesh = null;
+        }
         if (planarMesh == null) {
             // prevents calculating mesh update in every layer
             planarMesh = this.planarMesh;
@@ -125,6 +131,7 @@ public class LayerDynamic : LayerAbstract {
         if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); }
         int passShift = getUsedPassesCount() - 3;
         planarMesh.DEBUG_TRIANGLES = DEBUG_TRIANGLES;
+
 
         if (heightShift && lowerLayer != null && lowerLayer.getHeightMap() != null) {
             planarMesh.renderDistortedMap(heightMap, distortedHeightMap, lowerLayer.getHeightMap(), 0, passShift);
@@ -179,9 +186,25 @@ public class LayerDynamic : LayerAbstract {
     }
 
     private Arranger getArranger() {
-        foreach (Arranger arranger in GetComponents(typeof(Arranger))) {
-            return arranger;
+        int whichDynamicIAm = 0;
+        int whichArrangerItIs = 0;
+        multipleArrangers = GetComponents(typeof(Arranger)).Length > 1;
+
+        foreach (LayerDynamic ma in GetComponents(typeof(LayerDynamic))) {
+            whichDynamicIAm++;
+            if (ma == this) {
+                break;
+            }
         }
+
+        foreach (Arranger arranger in GetComponents(typeof(Arranger))) {
+            whichArrangerItIs++;
+            if (whichArrangerItIs == whichDynamicIAm) {
+                Debug.Log("Found arranger " + whichArrangerItIs + " " + whichDynamicIAm);
+                return arranger;
+            }
+        }
+
         ArrangerSpray spray = new ArrangerSpray();
         spray.size = 0;
         return spray;

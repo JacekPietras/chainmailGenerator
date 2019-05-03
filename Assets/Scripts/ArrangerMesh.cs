@@ -7,7 +7,10 @@ public class ArrangerMesh : Arranger {
     private List<DynamicObject> objects;
     private List<DynamicObject> objectOriginals;
     [Range(1, 100)]
-    public int size = 10;
+    public int sizeX = 10;
+    [Range(1, 100)]
+    public int sizeY = 10;
+    public float shifted = 0;
 
     public override List<DynamicObject> getObjects() {
         if (objects != null) {
@@ -15,13 +18,13 @@ public class ArrangerMesh : Arranger {
         }
 
         objects = new List<DynamicObject>();
-        for (float i = 0.5f; i < size; i++) {
-            for (float j = 0.5f; j < size; j++) {
+        for (float i = shifted; i < sizeX; i++) {
+            for (float j = shifted; j < sizeY; j++) {
                 DynamicObject obj = new DynamicObject(
-                    i / (float)size,
-                    j / (float)size,
+                    i / (float)sizeX,
+                    j / (float)sizeY,
                     Color.white);
-                Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
+                //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
                 objects.Add(obj);
             }
         }

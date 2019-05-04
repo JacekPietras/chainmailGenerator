@@ -188,7 +188,7 @@ public class RingGenerator {
         }
 
         normalTexture.wrapMode = TextureWrapMode.Clamp;
-
+        normalTexture.settype
         // Actually apply all 'setPixel' changes
         normalTexture.Apply();
 

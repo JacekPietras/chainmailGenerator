@@ -56,6 +56,8 @@ public abstract class LayerAbstract : MonoBehaviour {
             material.EnableKeyword("_METALLICGLOSSMAP");
             material.SetTexture("_BumpMap", getNormalMap());
             material.SetTexture("_MainTex", getColorMap());
+            material.SetTexture("_MetallicGlossMap", getColorMap());
+            material.SetTexture("_ParallaxMap", getHeightMap());
         }
     }
 

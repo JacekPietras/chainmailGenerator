@@ -145,7 +145,7 @@ public class LayerDynamic : LayerAbstract {
             if (lowerLayer.getHeightMap() != null && !heightShift) {
                 // there is LayerDynamic below, we need tom merge into it looking at height of pixels
 
-                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
+                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 0), 2, passShift);
 
                 // merge lower layers into distorted maps
                 bool[] mask = getMask();
@@ -175,7 +175,7 @@ public class LayerDynamic : LayerAbstract {
             }
         } else {
             // there is nothing below, we can draw over nothing
-            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 1), 2, passShift);
+            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 0), 2, passShift);
         }
 
         setTextures();

@@ -87,10 +87,10 @@ public class LayerDynamic : LayerAbstract {
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
-            System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
-            System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMapFromHeight.png", normalMapFromHeight.EncodeToPNG());
-            System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
-            System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
+            //System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMap.png", normalMap.EncodeToPNG());
+            //System.IO.File.WriteAllBytes(outputPath + layerName + "_NormalMapFromHeight.png", normalMapFromHeight.EncodeToPNG());
+            //System.IO.File.WriteAllBytes(outputPath + layerName + "_HeightMap.png", heightMap.EncodeToPNG());
+            //System.IO.File.WriteAllBytes(outputPath + layerName + "_EdgeMap.png", edgeMap.EncodeToPNG());
 
             String normalizationPath = outputPath + "Normalization/";
             if (Directory.Exists(normalizationPath)) {

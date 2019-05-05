@@ -188,7 +188,6 @@ public class RingGenerator {
         }
 
         normalTexture.wrapMode = TextureWrapMode.Clamp;
-        normalTexture.settype
         // Actually apply all 'setPixel' changes
         normalTexture.Apply();
 
@@ -198,6 +197,22 @@ public class RingGenerator {
 
         return normalTexture;
     }
+
+    private Texture2D DTXnm2RGBA(Texture2D tex) {
+        Color[] colors = tex.GetPixels();
+        for (int i = 0; i < colors.Length; i++) {
+            Color c = colors[i];
+            c.r = c.a * 2 - 1;  //red<-alpha (x<-w)
+            c.g = c.g * 2 - 1; //green is always the same (y)
+            Vector2 xy = new Vector2(c.r, c.g); //this is the xy vector
+            c.b = Mathf.Sqrt(1 - Mathf.Clamp01(Vector2.Dot(xy, xy))); //recalculate the blue channel (z)
+            colors[i] = new Color(c.r * 0.5f + 0.5f, c.g * 0.5f + 0.5f, c.b * 0.5f + 0.5f); //back to 0-1 range
+        }
+        tex.SetPixels(colors); //apply pixels to the texture
+        tex.Apply();
+        return tex;
+    }
+
 
     // returns generated normalMap of input 3D object
     // strength in argument is for how raised output texture should be

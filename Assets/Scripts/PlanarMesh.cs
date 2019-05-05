@@ -290,6 +290,7 @@ public class PlanarMesh {
                 }
 
                 // localMesh.printError();
+                // localMesh.objects.Reverse();
 
                 foreach (DynamicObject obj in localMesh.objects) {
                     Vector3[] transformedVerticles = localMesh.getTransformedByObject(obj);

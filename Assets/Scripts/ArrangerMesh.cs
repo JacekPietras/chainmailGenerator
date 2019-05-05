@@ -10,7 +10,10 @@ public class ArrangerMesh : Arranger {
     public int sizeX = 10;
     [Range(1, 100)]
     public int sizeY = 10;
-    public float shifted = 0;
+    [Range(0, 1)]
+    public float shiftX = 0;
+    [Range(0, 1)]
+    public float shiftY = 0;
 
     public override List<DynamicObject> getObjects() {
         if (objects != null) {
@@ -18,8 +21,8 @@ public class ArrangerMesh : Arranger {
         }
 
         objects = new List<DynamicObject>();
-        for (float i = shifted; i < sizeX; i++) {
-            for (float j = shifted; j < sizeY; j++) {
+        for (float i = shiftX; i < sizeX; i++) {
+            for (float j = shiftY; j < sizeY; j++) {
                 DynamicObject obj = new DynamicObject(
                     i / (float)sizeX,
                     j / (float)sizeY,

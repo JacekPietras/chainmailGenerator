@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: No Name
+  m_Name: From Generated
   m_Shader: {fileID: 4800000, guid: fe25ae9a627962342a29e33eccc44d1b, type: 3}
   m_ShaderKeywords: _ALPHABLEND_ON _GLOSSYREFLECTIONS_OFF _NORMALMAP _PARALLAXMAP
   m_LightmapFlags: 4
@@ -19,10 +19,10 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: 2e300493e73d756458ff22036b1b6bcb, type: 3}
+        m_Texture: {fileID: 2800000, guid: af7ccb12bcb223748a3b91c763d8b59d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _Cube:
+    - _CubeMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -43,7 +43,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 14eef17b7d37efb4eae5188ce793e073, type: 3}
+        m_Texture: {fileID: 2800000, guid: a9c71f0daa5cb4245897fddc20099d1d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -58,27 +58,38 @@ Material:
         m_Texture: {fileID: 2800000, guid: b0367ca58b473df43b109c0e0f2b12bc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
+    - _Amount: 1
+    - _Amplitude: 1
     - _BumpScale: 1
-    - _Curvature: 0
-    - _Cutoff: 1
+    - _Cutoff: 0.5
+    - _CutoutThresh: 0.2
     - _DetailNormalMapScale: 1
+    - _Distance: 1
     - _DstBlend: 10
-    - _GlossMapScale: 1
-    - _Glossiness: 0.5
+    - _GlossMapScale: 0.5
+    - _Glossiness: 0.302
     - _GlossyReflections: 0
-    - _Metallic: 0.622
+    - _Metallic: 1
     - _Mode: 2
     - _OcclusionStrength: 1
     - _Parallax: 0.005
-    - _Shininess: 0.09
+    - _Shininess: 0.709
+    - _Smoothness: 0.6
     - _SmoothnessTextureChannel: 0
+    - _Specular: 0.479
     - _SpecularHighlights: 1
+    - _Speed: 1
     - _SrcBlend: 5
+    - _Transparency: 0.25
     - _UVSec: 0
     - _ZWrite: 0
     m_Colors:
-    - _Color: {r: 0.5182202, g: 0.5203116, b: 0.52205884, a: 1}
+    - _Color: {r: 0.7607844, g: 0.7607844, b: 0.7607844, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ReflectColor: {r: 1, g: 1, b: 1, a: 0.5}
-    - _SpecColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
+    - _SpecColor: {r: 0.7381596, g: 0.7381596, b: 0.8161765, a: 1}
+    - _TintColor: {r: 1, g: 1, b: 1, a: 1}

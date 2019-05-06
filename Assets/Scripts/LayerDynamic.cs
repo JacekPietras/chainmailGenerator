@@ -48,6 +48,10 @@ public class LayerDynamic : LayerAbstract {
     public override void init() {
         mesh3d = GetComponent<MeshFilter>().mesh;
 
+        if(item == null) {
+            return;
+        }
+
         // generates raytraced maps from 3D object
         generator = new RingGenerator(item, itemResolution, stampRotation);
 
@@ -120,6 +124,10 @@ public class LayerDynamic : LayerAbstract {
     }
 
     public override void updateDistortedMap(PlanarMesh planarMesh = null) {
+        if(heightMap == null) {
+            return;
+        }
+
         if (multipleArrangers) {
             planarMesh = null;
         }
@@ -128,6 +136,7 @@ public class LayerDynamic : LayerAbstract {
             planarMesh = this.planarMesh;
             planarMesh.updateMesh(mesh3d);
         }
+
         if (lowerLayer != null) { lowerLayer.updateDistortedMap(planarMesh); }
         int passShift = getUsedPassesCount() - 3;
         planarMesh.DEBUG_TRIANGLES = DEBUG_TRIANGLES;
@@ -141,11 +150,16 @@ public class LayerDynamic : LayerAbstract {
             planarMesh.renderDistortedMap(normalMap, distortedNormalMap, new Color(.5f, .5f, 1, 1), 1, passShift);
         }
 
+        Color bg = new Color(0, 0, 0, 0);
+        if (DEBUG_TRIANGLES) {
+            bg = new Color(0, 0, 0, 1);
+        }
+
         if (lowerLayer != null) {
             if (lowerLayer.getHeightMap() != null && !heightShift) {
                 // there is LayerDynamic below, we need tom merge into it looking at height of pixels
 
-                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 0), 2, passShift);
+                planarMesh.renderDistortedMap(edgeMap, distortedColorMap, bg, 2, passShift);
 
                 // merge lower layers into distorted maps
                 bool[] mask = getMask();
@@ -175,7 +189,7 @@ public class LayerDynamic : LayerAbstract {
             }
         } else {
             // there is nothing below, we can draw over nothing
-            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, new Color(0, 0, 0, 0), 2, passShift);
+            planarMesh.renderDistortedMap(edgeMap, distortedColorMap, bg, 2, passShift);
         }
 
         setTextures();
@@ -189,6 +203,7 @@ public class LayerDynamic : LayerAbstract {
         int whichDynamicIAm = 0;
         int whichArrangerItIs = 0;
         multipleArrangers = GetComponents(typeof(Arranger)).Length > 1;
+
 
         foreach (LayerDynamic ma in GetComponents(typeof(LayerDynamic))) {
             whichDynamicIAm++;
@@ -208,5 +223,10 @@ public class LayerDynamic : LayerAbstract {
         ArrangerSpray spray = new ArrangerSpray();
         spray.size = 0;
         return spray;
+    }
+
+    public void sendVerticles(Vector3[] verticles) {
+        Debug.Log("sendVerticles " + verticles.Length);
+        mesh3d.vertices = verticles;
     }
 }

@@ -2532,7 +2532,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: cf5e763a25c268247a0a208aef52c1ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: cf5e763a25c268247a0a208aef52c1ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2599,9 +2599,9 @@ MonoBehaviour:
   normalizationStrength: 0.7
   showingNormalization: 0
   neighbourRadius: 1
-  detectOverlappingOnAllTriangles: 1
+  detectOverlappingOnAllTriangles: 0
   detectOverlappingOnAllEdges: 1
-  useStrength: 1
+  useStrength: 0
   alwaysBuildBestMesh: 1
   DEBUG_TRIANGLES: 0
   block: 1
@@ -2616,7 +2616,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 280b2df9a3ddb2d459921b07573dcc14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layerName: Top
+  layerName: Bottom
   nothingAtAll: 0
   itemResolution: 2048
   textureResolution: 2048
@@ -2627,9 +2627,9 @@ MonoBehaviour:
   normalizationStrength: 0.7
   showingNormalization: 0
   neighbourRadius: 1
-  detectOverlappingOnAllTriangles: 1
+  detectOverlappingOnAllTriangles: 0
   detectOverlappingOnAllEdges: 1
-  useStrength: 1
+  useStrength: 0
   alwaysBuildBestMesh: 1
   DEBUG_TRIANGLES: 0
   block: 1

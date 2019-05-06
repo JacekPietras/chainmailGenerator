@@ -68,20 +68,18 @@ public class LayerDynamic : LayerAbstract {
         distortedNormalMap = new Texture2D(textureResolution, textureResolution);
         distortedColorMap = new Texture2D(textureResolution, textureResolution);
 
-        if (block == 0) {
-            planarMesh = new PlanarMesh(
-                GetComponent<Transform>(),
-                mesh3d,
-                getArranger(),
-                normalizationSteps,
-                normalizationStrength,
-                showingNormalization,
-                neighbourRadius,
-                detectOverlappingOnAllTriangles,
-                detectOverlappingOnAllEdges,
-                useStrength,
-                alwaysBuildBestMesh);
-        }
+        planarMesh = new PlanarMesh(
+            GetComponent<Transform>(),
+            mesh3d,
+            getArranger(),
+            normalizationSteps,
+            normalizationStrength,
+            showingNormalization,
+            neighbourRadius,
+            detectOverlappingOnAllTriangles,
+            detectOverlappingOnAllEdges,
+            useStrength,
+            alwaysBuildBestMesh);
     }
 
     void OnDestroy() {
@@ -128,7 +126,7 @@ public class LayerDynamic : LayerAbstract {
     }
 
     public override void updateDistortedMap(PlanarMesh planarMesh = null) {
-        if (block != 0 && block != 3) {
+        if (block == 1 || block == 3) {
             return;
         }
 
@@ -202,8 +200,8 @@ public class LayerDynamic : LayerAbstract {
 
         setTextures();
 
-        if (block == 3) {
-            block ++;
+        if (block == 2) {
+            block++;
         }
     }
 
@@ -238,22 +236,8 @@ public class LayerDynamic : LayerAbstract {
     }
 
     public void sendVerticles(Vector3[] verticles) {
-        if (block == 2) {
-            planarMesh = new PlanarMesh(
-                GetComponent<Transform>(),
-                mesh3d,
-                getArranger(),
-                normalizationSteps,
-                normalizationStrength,
-                showingNormalization,
-                neighbourRadius,
-                detectOverlappingOnAllTriangles,
-                detectOverlappingOnAllEdges,
-                useStrength,
-                alwaysBuildBestMesh);
-
+        if (block < 3) {
             mesh3d.vertices = verticles;
-            block++;
         }
     }
 }

@@ -37,6 +37,8 @@ public class LayerDynamic : LayerAbstract {
     private Texture2D distortedHeightMap;
     private Texture2D distortedNormalMap;
 
+    public int block;
+
     private Mesh mesh3d;
 
     public override Texture2D getHeightMap() { return distortedHeightMap; }
@@ -48,7 +50,7 @@ public class LayerDynamic : LayerAbstract {
     public override void init() {
         mesh3d = GetComponent<MeshFilter>().mesh;
 
-        if(item == null) {
+        if (item == null) {
             return;
         }
 
@@ -124,7 +126,11 @@ public class LayerDynamic : LayerAbstract {
     }
 
     public override void updateDistortedMap(PlanarMesh planarMesh = null) {
-        if(heightMap == null) {
+        if (block == 1 || block == 3) {
+            return;
+        }
+
+        if (heightMap == null) {
             return;
         }
 
@@ -193,6 +199,10 @@ public class LayerDynamic : LayerAbstract {
         }
 
         setTextures();
+
+        if (block == 2) {
+            block = 3;
+        }
     }
 
     public override int getUsedPassesCountVal() {
@@ -226,7 +236,8 @@ public class LayerDynamic : LayerAbstract {
     }
 
     public void sendVerticles(Vector3[] verticles) {
-        Debug.Log("sendVerticles " + verticles.Length);
-        mesh3d.vertices = verticles;
+        if (block < 3) {
+            mesh3d.vertices = verticles;
+        }
     }
 }

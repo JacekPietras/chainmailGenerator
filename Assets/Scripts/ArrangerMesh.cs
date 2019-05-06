@@ -14,6 +14,10 @@ public class ArrangerMesh : Arranger {
     public float shiftX = 0;
     [Range(0, 1)]
     public float shiftY = 0;
+    [Range(0, 0.1f)]
+    public float paddingX = 0;
+    [Range(0, 0.1f)]
+    public float paddingY = 0;
 
     public override List<DynamicObject> getObjects() {
         if (objects != null) {
@@ -24,14 +28,14 @@ public class ArrangerMesh : Arranger {
         for (float i = shiftX; i < sizeX; i++) {
             for (float j = shiftY; j < sizeY; j++) {
                 DynamicObject obj = new DynamicObject(
-                    i / (float)sizeX,
-                    j / (float)sizeY,
+                    paddingX + (i / (float)sizeX) * (1 - paddingX * 2),
+                    paddingY + (j / (float)sizeY) * (1 - paddingY * 2),
                     Color.white);
                 //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
                 objects.Add(obj);
             }
         }
-        Debug.Log("Found "+ objects.Count + " objects");
+        Debug.Log("Found " + objects.Count + " objects");
         return objects;
     }
 }

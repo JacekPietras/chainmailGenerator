@@ -14,8 +14,9 @@ public class ClothTransporter : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if (listOfCloth != null && receiver != null) {
-            LayerDynamic layer = (LayerDynamic)receiver.GetComponents(typeof(LayerDynamic))[0];
-            layer.sendVerticles(listOfCloth.vertices);
+            foreach (LayerDynamic ma in receiver.GetComponents(typeof(LayerDynamic))) {
+                ma.sendVerticles(listOfCloth.vertices);
+            }
         }
     }
 }

@@ -88,7 +88,7 @@ public class PlanarMesh {
         cleaningMesh.triangles = triangles;
         cleaningMesh.normals = normals;
     }
-    
+
     private int assignObjects(
             Mesh mesh3d,
             List<DynamicObject> objects,
@@ -99,7 +99,7 @@ public class PlanarMesh {
             bool lookAtAllObjects = true) {
         int found = 0;
         foreach (DynamicObject obj in objects) {
-            if(obj.assigned) {
+            if (obj.assigned) {
                 continue;
             }
 
@@ -161,7 +161,7 @@ public class PlanarMesh {
             gridVertices[i + 1] = new Vector3(u2.x, 1 - u2.y);
             gridVertices[i + 2] = new Vector3(u3.x, 1 - u3.y);
 
-            found+= assignObjects(mesh3d, objects, u1, u2, u3, i, lookAtAllObjects);
+            found += assignObjects(mesh3d, objects, u1, u2, u3, i, lookAtAllObjects);
 
             if (!lookAtAllObjects) {
                 neighbours[i / 3] = new NeighbourCreator(mesh3d, i, neighbourRadius).create();
@@ -195,7 +195,7 @@ public class PlanarMesh {
                 }
             } else {
                 objects = arranger.getObjects();
-                foreach(DynamicObject obj in objects) {
+                foreach (DynamicObject obj in objects) {
                     obj.assigned = false;
                 }
             }
@@ -479,13 +479,18 @@ public class PlanarMesh {
     private void renderPlanarMeshOnTexture(Texture2D stamp, Color backgroundC, Texture2D backgroundT, int pass, int row) {
         GL.PushMatrix();
         GL.LoadPixelMatrix(0 - pass, 1, 1, 0 - row);
-        if (backgroundT == null) { setMaterialByColor(backgroundC); } else { setMaterialByTexture(backgroundT); }
-        Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
-        if (DEBUG_TRIANGLES)
-            setMaterialByColor(new Color(1, 0, 0, 1));
-        else
+        if (backgroundT == null) {
             setMaterialByColor(backgroundC);
-        Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
+        } else {
+            setMaterialByTexture(backgroundT);
+        }
+        Graphics.DrawMeshNow(cleaningMesh, Vector3.zero, Quaternion.identity);
+        if (DEBUG_TRIANGLES) {
+            setMaterialByColor(new Color(1, 0, 0, 1));
+            //else
+            //    setMaterialByColor(backgroundC);
+            Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
+        }
         setMaterialByTexture(stamp);
         Graphics.DrawMeshNow(mesh, Vector3.zero, Quaternion.identity);
         GL.PopMatrix();

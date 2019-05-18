@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using UnityEngine;
 
 public abstract class LayerAbstract : MonoBehaviour {
@@ -47,6 +49,15 @@ public abstract class LayerAbstract : MonoBehaviour {
                 }
             }
         }
+    }
+
+    protected String createOutputDirectory() {
+        String outputPath = "Assets/OutputMaps/";
+        if (Directory.Exists(outputPath) && lowerLayer == null) {
+            Directory.Delete(outputPath, true);
+        }
+        Directory.CreateDirectory(outputPath);
+        return outputPath;
     }
 
     protected void setTextures() {

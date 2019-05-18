@@ -84,11 +84,8 @@ public class LayerDynamic : LayerAbstract {
 
     void OnDestroy() {
         if (distortedNormalMap != null) {
-            String outputPath = "Assets/OutputMaps/";
-            if (Directory.Exists(outputPath) && lowerLayer == null) {
-                Directory.Delete(outputPath, true);
-            }
-            Directory.CreateDirectory(outputPath);
+            String outputPath = createOutputDirectory();
+
             // map is also saved in asset files so we can use it in other places
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
             System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
@@ -158,7 +155,7 @@ public class LayerDynamic : LayerAbstract {
 
         Color bg = new Color(0, 0, 0, 0);
         if (DEBUG_TRIANGLES) {
-            bg = new Color(0, 0, 0, 1);
+            bg = new Color(1, 0, 0, 1);
         }
 
         if (lowerLayer != null) {

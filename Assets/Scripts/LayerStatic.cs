@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using UnityEngine;
 
 public class LayerStatic : LayerAbstract {
@@ -24,13 +26,15 @@ public class LayerStatic : LayerAbstract {
     }
 
     void OnDestroy() {
+        String outputPath = createOutputDirectory();
+
         // map is also saved in asset files so we can use it in other places
         if (distortedNormalMap != null)
-            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedNormalMap.png", distortedNormalMap.EncodeToPNG());
         if (distortedHeightMap != null)
-            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedHeightMap.png", distortedHeightMap.EncodeToPNG());
         if (distortedColorMap != null)
-            System.IO.File.WriteAllBytes("Assets/Maps/" + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
+            System.IO.File.WriteAllBytes(outputPath + layerName + "_DistortedColorMap.png", distortedColorMap.EncodeToPNG());
     }
 
     public override void updateDistortedMap(PlanarMesh planarMesh = null) {
@@ -61,6 +65,8 @@ public class LayerStatic : LayerAbstract {
                 }
                 setTextures();
             }
+        } else if (colorMap != null)  {
+            setTextures();
         }
     }
 

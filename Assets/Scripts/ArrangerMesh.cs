@@ -18,6 +18,9 @@ public class ArrangerMesh : Arranger {
     public float paddingX = 0;
     [Range(0, 0.1f)]
     public float paddingY = 0;
+    [Range(0, 1f)]
+    public float sizeOfElement = 1;
+
 
     public override List<DynamicObject> getObjects() {
         if (objects != null) {
@@ -30,7 +33,7 @@ public class ArrangerMesh : Arranger {
                 DynamicObject obj = new DynamicObject(
                     paddingX + (i / (float)sizeX) * (1 - paddingX * 2),
                     paddingY + (j / (float)sizeY) * (1 - paddingY * 2),
-                    Color.white);
+                    new Color(1, sizeOfElement, 1));
                 //Debug.Log("Found object (" + obj.x + ", " + obj.y + ")");
                 objects.Add(obj);
             }

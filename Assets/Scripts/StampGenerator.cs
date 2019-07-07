@@ -4,7 +4,7 @@ using UnityEngine;
 
 // Class helps to generate heightMap and normalMap
 // It is raytracing input 3D model to planar textures
-public class RingGenerator {
+public class StampGenerator {
     // resolutian of both output textures
     public int resolution = 512;
 
@@ -25,7 +25,7 @@ public class RingGenerator {
     private float strengthOfGeneratedEdgeMap = -1f;
     private Vector3 rotation;
 
-    public RingGenerator(GameObject item, int resolution, Vector3 rotation) {
+    public StampGenerator(GameObject item, int resolution, Vector3 rotation) {
         this.item = item;
         if (resolution > 0)
             this.resolution = resolution;

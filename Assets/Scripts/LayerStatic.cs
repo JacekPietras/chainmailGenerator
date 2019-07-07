@@ -61,7 +61,7 @@ public class LayerStatic : LayerAbstract {
                     distortedHeightMap.SetPixels(combinedHeight);
                     distortedHeightMap.Apply();
 
-                    RingGenerator.printNormalMap(distortedNormalMap, distortedHeightMap);
+                    StampGenerator.printNormalMap(distortedNormalMap, distortedHeightMap);
                 }
                 setTextures();
             }

@@ -25,7 +25,7 @@ public class LayerDynamic : LayerAbstract {
     public bool alwaysBuildBestMesh = false;
     public bool DEBUG_TRIANGLES = false;
 
-    private RingGenerator generator;
+    private StampGenerator generator;
     private PlanarMesh planarMesh;
     private bool multipleArrangers;
 
@@ -55,7 +55,7 @@ public class LayerDynamic : LayerAbstract {
         }
 
         // generates raytraced maps from 3D object
-        generator = new RingGenerator(item, itemResolution, stampRotation);
+        generator = new StampGenerator(item, itemResolution, stampRotation);
 
         // raytracing stamp textures from 3D object
         heightMap = generator.getHeightMap();
